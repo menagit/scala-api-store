@@ -1,0 +1,64 @@
+# -----------------------------------------------------------------------------
+# SBT / Play build output
+# -----------------------------------------------------------------------------
+target/
+/project/target/
+/project/project/
+/dist/
+
+# Play runtime files
+RUNNING_PID
+server.pid
+
+# Logs, temp files, caches
+/logs/
+*.log
+tmp/
+.cache
+.cache-main
+.cache-tests
+test-result/
+.history/
+*.class
+
+# -----------------------------------------------------------------------------
+# Secrets and local configuration (never commit these)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+conf/*.local.conf
+*.keystore
+*.truststore
+
+# -----------------------------------------------------------------------------
+# IDEs and editors
+# -----------------------------------------------------------------------------
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+.idea_modules/
+out/
+
+# VS Code
+.vscode/
+
+# Eclipse / Scala IDE
+.scala_dependencies
+.classpath
+.project
+.settings/
+.eclipse
+
+# OS files
+.DS_Store
+
+# -----------------------------------------------------------------------------
+# Scala tooling caches (BSP, Bloop, Metals)
+# -----------------------------------------------------------------------------
+.bsp/
+.bloop/
+.metals/
+metals.sbt
