@@ -1,0 +1,24 @@
+flowchart TB
+    notifications["<b>notifications</b><br/>sends emails"]
+
+    subgraph core [" "]
+        direction TB
+        ordering["<b>ordering</b><br/>checkout and orders"]
+        shopping["<b>shopping</b><br/>carts"]
+        payments["<b>payments</b><br/>Stripe payments"]
+        catalog["<b>catalog</b><br/>products and stock"]
+        identity["<b>identity</b><br/>users and tokens"]
+
+        ordering --> shopping
+        ordering --> payments
+        shopping --> catalog
+        ordering --> catalog
+    end
+
+    notifications -.->|"reacts to events from all contexts"| core
+
+    classDef ctx fill:#1168bd,stroke:#0b4884,color:#ffffff
+    classDef leaf fill:#08427b,stroke:#052e56,color:#ffffff
+    class notifications,ordering,shopping ctx
+    class catalog,payments,identity leaf
+    style core fill:#f5f5f5,stroke:#bbbbbb
