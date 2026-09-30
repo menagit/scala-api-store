@@ -20,5 +20,6 @@ libraryDependencies ++= Seq(
   jdbc,
   "com.lucidchart" %% "relate" % "5.1.0",
   "com.mysql" % "mysql-connector-j" % "8.4.0",
+  "com.github.pureconfig" %% "pureconfig" % "0.17.10",
   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test
 )
