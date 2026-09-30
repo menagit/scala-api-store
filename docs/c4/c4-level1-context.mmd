@@ -1,0 +1,21 @@
+flowchart LR
+    client["<b>Client</b><br/>[Person]<br/>Browses products, manages a cart,<br/>places and pays for orders"]
+    manager["<b>Manager</b><br/>[Person]<br/>Manages products, stock and prices,<br/>updates order status"]
+
+    api["<b>API Store</b><br/>[Software System]<br/>E-commerce backend exposing<br/>REST and GraphQL APIs"]
+
+    stripe["<b>Stripe</b><br/>[External System]<br/>Card payments and<br/>payment result webhooks"]
+    email["<b>Email service</b><br/>[External System]<br/>SMTP server<br/>(Mailpit in development)"]
+
+    client -->|"Uses<br/>HTTPS: REST, GraphQL"| api
+    manager -->|"Uses<br/>HTTPS: REST, GraphQL"| api
+    api -->|"Creates payment intents<br/>HTTPS"| stripe
+    stripe -->|"Sends payment events<br/>HTTPS webhook"| api
+    api -->|"Sends notifications<br/>SMTP"| email
+
+    classDef person fill:#08427b,stroke:#052e56,color:#ffffff
+    classDef system fill:#1168bd,stroke:#0b4884,color:#ffffff
+    classDef external fill:#999999,stroke:#6b6b6b,color:#ffffff
+    class client,manager person
+    class api system
+    class stripe,email external
