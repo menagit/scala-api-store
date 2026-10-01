@@ -35,6 +35,11 @@ class TxRunnerSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll with
   private def eventCount(): Int =
     TestDatabase.query("SELECT COUNT(*) FROM shared_event")(_.getInt(1)).head
 
+
+  /**
+   * The life cycle hooks == JUnit's lifecycle annotations. That's why all the with
+   * in the class level
+   */
   override def beforeEach(): Unit = TestDatabase.update("DELETE FROM shared_event")
 
   override def afterAll(): Unit = {
@@ -42,6 +47,13 @@ class TxRunnerSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll with
     pool.shutdown()
   }
 
+  /**
+   * The actual 3 test we are making
+   */
+
+  /**
+   * The AnyWordSpec gives us this kind of syntax for the tests...BDD
+   */
   "TxRunner" should {
     "commit when the work returns Right" in {
       val result = Await.result(tx.run[String, Int] { conn => insertEvent(conn); Right(1) }, 10.seconds)
