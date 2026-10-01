@@ -21,6 +21,12 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
        |  $mail
        |}""".stripMargin
 
+  private val withPoolSize =
+    s"""app {
+       |  database { host = "localhost", port = 3306, name = "api_store", user = "app", password = "db-secret", pool-size = 25 }
+       |  $mail
+       |}""".stripMargin
+
   "AppConfig.load" should {
 
     "load a valid configuration" in {
@@ -45,6 +51,14 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
       val printed = AppConfig.load(ConfigSource.string(valid)).map(_.toString)
 
       printed.map(_.contains("db-secret")) shouldBe Right(false)
+    }
+
+    "use a pool size of 10 when the key is missing" in {
+      AppConfig.load(ConfigSource.string(valid)).map(_.database.poolSize) shouldBe Right(10)
+    }
+
+    "read the pool size when it is set" in {
+      AppConfig.load(ConfigSource.string(withPoolSize)).map(_.database.poolSize) shouldBe Right(25)
     }
   }
 }
