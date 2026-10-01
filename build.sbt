@@ -19,7 +19,9 @@ libraryDependencies ++= Seq(
   guice,
   jdbc,
   "com.lucidchart" %% "relate" % "5.1.0",
-  "com.mysql" % "mysql-connector-j" % "8.4.0",
+  "com.mysql" % "mysql-connector-j" % "9.7.0",
+  "org.flywaydb" % "flyway-core" % "13.8.1",
+  "org.flywaydb" % "flyway-mysql" % "13.8.1",
   "com.github.pureconfig" %% "pureconfig" % "0.17.10",
   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test
 )
