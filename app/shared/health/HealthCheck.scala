@@ -1,0 +1,23 @@
+package shared.health
+
+import com.lucidchart.relate._
+import jakarta.inject.{Inject, Singleton}
+import play.api.Logging
+import shared.db.TxRunner
+import shared.error.AppError
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
+
+@Singleton
+class HealthCheck @Inject() (tx: TxRunner) extends Logging {
+
+  def check(): Future[Either[AppError, Unit]] =
+    tx.run[AppError, Unit] { conn =>
+      sql"SELECT 1 AS ok".asSingle(_.int("ok"))(conn)
+      Right(())
+    }.recover { case NonFatal(e) =>
+      logger.warn("Database health check failed", e)
+      Left(AppError.Unavailable("Database unavailable"))
+    }(ExecutionContext.parasitic)
+}
