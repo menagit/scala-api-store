@@ -29,3 +29,5 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala-mysql" % "0.44.1" % Test,
   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test
 )
+
+coverageExcludedPackages := "<empty>;router\\..*;controllers\\.ReverseHealthController;controllers\\.javascript\\..*"

@@ -19,3 +19,11 @@ The architecture is decided for the foundations and for identity, and the decisi
 ## Running the project
 
 Instructions will be added once the first version of the app runs.
+
+## Test coverage
+
+Run the tests with a coverage report:
+
+    ./dev.sh clean coverage test coverageReport
+
+Open `target/scala-2.13/scoverage-report/index.html` in a browser. Run `./dev.sh clean` afterwards, so the next normal build does not keep the coverage counters.
