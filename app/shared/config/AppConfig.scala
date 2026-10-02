@@ -9,7 +9,8 @@ final case class DatabaseConfig(
                                  port: Int,
                                  name: String,
                                  user: String,
-                                 password: Secret
+                                 password: Secret,
+                                 poolSize: Int = 10
                                )
 
 final case class MailConfig(

@@ -23,6 +23,8 @@ libraryDependencies ++= Seq(
   "org.flywaydb" % "flyway-core" % "13.8.1",
   "org.flywaydb" % "flyway-mysql" % "13.8.1",
   "com.github.pureconfig" %% "pureconfig" % "0.17.10",
+  "com.dripower" %% "play-circe" % "3014.1",
+  "io.circe" %% "circe-core" % "0.14.16",
   "com.dimafeng" %% "testcontainers-scala-scalatest" % "0.44.1" % Test,
   "com.dimafeng" %% "testcontainers-scala-mysql" % "0.44.1" % Test,
   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test
