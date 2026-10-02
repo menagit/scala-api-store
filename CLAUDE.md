@@ -100,7 +100,7 @@ Packages sit at the top of `app/` (for example `shared.config`), with no organiz
 
 ## Testing
 
-- Test business rules, use cases and error paths. Simple wiring (modules, config, trivial controllers) doesn't need its own test. The project minimum is 50% statements, enforced in CI.
+- Test business rules, use cases and error paths. Simple wiring (modules, config, trivial controllers) doesn't need its own test. The project minimum is 50% statements (planned to be enforced in CI, see Commands).
 - Unit tests: domain and use cases, with fake repositories (a small hand-made fake of a trait is fine) and a fixed `Clock`. Style: ScalaTest `AnyWordSpec` with `Matchers` (`should`).
 - Integration tests: real MySQL through Testcontainers. One shared container for the whole test run, in `test/shared/db/TestDatabase`; it is migrated once, and each test cleans its own tables in `beforeEach`. It is never the development database.
 - Controller tests: `PlaySpec` with `GuiceOneAppPerSuite` (`must`), building the application with the `TestDatabase` values. Override `app.database.*`, `db.default.*` and `app.mail.*`.
