@@ -25,8 +25,8 @@ A library is added to `build.sbt` only by the task that first needs it.
 docker compose up -d            # MySQL (3306) and Mailpit (1025, UI on 8025), bound to 127.0.0.1
 ./dev.sh run                    # loads .env into the shell, then sbt run
 ./dev.sh test                   # same, then sbt test (needs Docker: tests start a MySQL container)
-./dev.sh "testOnly shared.config.AppConfigSpec"             # one spec
-./dev.sh "testOnly shared.config.AppConfigSpec -- -z \"valid\""   # tests whose name contains "valid"
+./dev.sh "testOnly com.mendev.apistore.shared.config.AppConfigSpec"             # one spec
+./dev.sh "testOnly com.mendev.apistore.shared.config.AppConfigSpec -- -z \"valid\""   # tests whose name contains "valid"
 ./dev.sh clean coverage test coverageReport   # coverage report, then run ./dev.sh clean
 ./dev.sh                        # interactive sbt shell with .env loaded
 ```
@@ -41,7 +41,7 @@ docker compose up -d            # MySQL (3306) and Mailpit (1025, UI on 8025), b
 ## Layout
 
 ```
-app/
+app/com/mendev/apistore/
   shared/          cross-cutting only: config, db (Flyway, TxRunner), error (AppError), web (ErrorResponse, JsonErrorHandler), health, filters, actions, Actor/Role
   identity/        bounded contexts, each with:
   catalog/           domain/          entities, value objects, rules (no Play, no SQL)
@@ -52,11 +52,11 @@ app/
   graphql/         one top-level adapter; may call any context's use cases
   controllers/     the first endpoint (HealthController); context controllers move to each context's web/
 conf/              application.conf, routes, db/migration
-test/              mirrors app/ (shared/db/TestDatabase is the shared test MySQL)
+test/com/mendev/apistore/   mirrors app/ (shared/db/TestDatabase is the shared test MySQL)
 docs/              ADRs, C4 diagrams
 ```
 
-Packages sit at the top of `app/` (for example `shared.config`), with no organization prefix. So far code exists only in `shared/` and `controllers/`; add folders as each task needs them.
+All code is under the package prefix `com.mendev.apistore` (folder `app/com/mendev/apistore/`, tests mirror it under `test/`). Package names in this file are written without the prefix, for example `shared.config`. So far code exists only in `shared/` and `controllers/`; add folders as each task needs them.
 
 ## Architecture rules
 
@@ -102,7 +102,7 @@ Packages sit at the top of `app/` (for example `shared.config`), with no organiz
 
 - Test business rules, use cases and error paths. Simple wiring (modules, config, trivial controllers) doesn't need its own test. The project minimum is 50% statements (planned to be enforced in CI, see Commands).
 - Unit tests: domain and use cases, with fake repositories (a small hand-made fake of a trait is fine) and a fixed `Clock`. Style: ScalaTest `AnyWordSpec` with `Matchers` (`should`).
-- Integration tests: real MySQL through Testcontainers. One shared container for the whole test run, in `test/shared/db/TestDatabase`; it is migrated once, and each test cleans its own tables in `beforeEach`. It is never the development database.
+- Integration tests: real MySQL through Testcontainers. One shared container for the whole test run, in `test/com/mendev/apistore/shared/db/TestDatabase`; it is migrated once, and each test cleans its own tables in `beforeEach`. It is never the development database.
 - Controller tests: `PlaySpec` with `GuiceOneAppPerSuite` (`must`), building the application with the `TestDatabase` values. Override `app.database.*`, `db.default.*` and `app.mail.*`.
 - The app fails at startup when MySQL is unreachable (Flyway runs eagerly), so the "database down" case is tested with a fake `TxRunner`.
 - Name the spec to run and the result to expect before saying a change works.
