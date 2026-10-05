@@ -56,14 +56,14 @@ test/com/mendev/apistore/   mirrors app/ (shared/db/TestDatabase is the shared t
 docs/              ADRs, C4 diagrams
 ```
 
-All code is under the package prefix `com.mendev.apistore` (folder `app/com/mendev/apistore/`, tests mirror it under `test/`). Package names in this file are written without the prefix, for example `shared.config`. So far code exists only in `shared/` and `controllers/`; add folders as each task needs them.
+All code is under the package prefix `com.mendev.apistore` (folder `app/com/mendev/apistore/`, tests mirror it under `test/`). Package names in this file are written without the prefix, for example `shared.config`. So far code exists only in `shared/`, `controllers/` and `identity/`; add folders as each task needs them.
 
 ## Architecture rules
 
 - One-way dependencies between contexts, no cycles. Identity, catalog and payments depend on no other context. Shopping uses catalog. Ordering uses catalog, payments and shopping. Notifications only reacts to events; nothing depends on it.
 - When a context needs something from one that already depends on it, it defines a small trait and the other implements it (`PendingOrderChecker` in catalog, implemented by ordering; `TokenVerifier` in shared, implemented by identity).
 - Only IDs, plain values and read models cross a context boundary. Never another context's entity or repository.
-- `shared` contains no domain concepts and depends on no context.
+- `shared` contains no domain concepts and depends on no context, except the caller identity (`Actor`, `Role`).
 - No Play types in the application layer (use cases and ports). `TxRunner` uses only `java.sql.Connection`, `Future` and `Either`. Play's `Database` appears only in `PlayDbTxRunner` and `DbModule`.
 - Controllers and resolvers are thin: parse, call a use case, map the result. No business rules in them.
 - Authorization in two layers: action builders at the edge (401/403), and an explicit `Actor` in every use case that acts for a user (404 for records that aren't yours).
