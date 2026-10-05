@@ -3,4 +3,5 @@
 # https://www.playframework.com/documentation/latest/ScalaRouting
 # ~~~~
 GET     /health     com.mendev.apistore.controllers.HealthController.health
+POST  /auth/sign-up  com.mendev.apistore.identity.infrastructure.web.AuthController.register
 
