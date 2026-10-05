@@ -3,7 +3,8 @@ package com.mendev.apistore.identity
 import com.google.inject.AbstractModule
 import com.mendev.apistore.identity.application.{IdGenerator, PasswordHasher, UserRepository}
 import com.mendev.apistore.identity.infrastructure.persistence.InMemoryUserRepository
-import com.mendev.apistore.identity.infrastructure.{PlainTextPasswordHasher, UuidV7Generator}
+import com.mendev.apistore.identity.infrastructure.PlainTextPasswordHasher
+import com.mendev.apistore.identity.infrastructure.id.UuidV7Generator
 
 
 class IdentityModule extends AbstractModule{

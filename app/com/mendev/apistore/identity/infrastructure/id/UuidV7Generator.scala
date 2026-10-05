@@ -1,4 +1,4 @@
-package com.mendev.apistore.identity.infrastructure
+package com.mendev.apistore.identity.infrastructure.id
 
 import com.mendev.apistore.identity.application.IdGenerator
 import jakarta.inject.{Inject, Singleton}
