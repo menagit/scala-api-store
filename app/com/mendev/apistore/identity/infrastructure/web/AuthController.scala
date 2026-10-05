@@ -16,9 +16,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class AuthController @Inject() (cc: ControllerComponents, signUpUseCase: SignUp)(implicit ec: ExecutionContext)
   extends AbstractController(cc) with Circe {
 
-  def register: Action[Json] = Action.async(circe.tolerantJson) { request =>
+  def register: Action[String] = Action.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, SignUpCommand] =
-      request.body.as[SignUpRequest].left.map(_ => invalidBody).flatMap(toCommand)
+      io.circe.parser.decode[SignUpRequest](request.body).left.map(_ => invalidBody).flatMap(toCommand)
 
     parsed match {
       //The error case
