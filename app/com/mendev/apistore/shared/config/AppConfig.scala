@@ -23,7 +23,8 @@ final case class MailConfig(
 
 final case class AppConfig(
                             database: DatabaseConfig,
-                            mail: MailConfig
+                            mail: MailConfig,
+                            jwt: JwtConfig
                           )
 
 object AppConfig {

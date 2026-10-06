@@ -27,6 +27,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-core" % "0.14.16",
   "io.circe" %% "circe-generic" % "0.14.16",
   "com.password4j" % "password4j" % "1.8.4",
+  "com.github.jwt-scala" %% "jwt-circe" % "11.0.4",
   "com.dimafeng" %% "testcontainers-scala-scalatest" % "0.44.1" % Test,
   "com.dimafeng" %% "testcontainers-scala-mysql" % "0.44.1" % Test,
   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test
