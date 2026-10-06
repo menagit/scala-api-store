@@ -42,7 +42,7 @@ docker compose up -d            # MySQL (3306) and Mailpit (1025, UI on 8025), b
 
 ```
 app/com/mendev/apistore/
-  shared/          cross-cutting only: config, db (Flyway, TxRunner), error (AppError), web (ErrorResponse, JsonErrorHandler), health, filters, actions, Actor/Role
+  shared/          cross-cutting only: config, db (Flyway, TxRunner), error (AppError), web (ErrorResponse, JsonErrorHandler), health (HealthCheck and its controller in health/web), filters, actions, Actor/Role
   identity/        bounded contexts, each with:
   catalog/           domain/          entities, value objects, rules (no Play, no SQL)
   shopping/          application/     use cases and ports (traits)
@@ -52,13 +52,12 @@ app/com/mendev/apistore/
                        security/      adapters for security ports (Argon2PasswordHasher)
                        id/            id generators (UuidV7Generator)
   graphql/         one top-level adapter; may call any context's use cases
-  controllers/     the first endpoint (HealthController); context controllers move to each context's web/
 conf/              application.conf, routes, db/migration
 test/com/mendev/apistore/   mirrors app/ (shared/db/TestDatabase is the shared test MySQL)
 docs/              ADRs, C4 diagrams
 ```
 
-All code is under the package prefix `com.mendev.apistore` (folder `app/com/mendev/apistore/`, tests mirror it under `test/`). Package names in this file are written without the prefix, for example `shared.config`. So far code exists only in `shared/`, `controllers/` and `identity/`; add folders as each task needs them.
+All code is under the package prefix `com.mendev.apistore` (folder `app/com/mendev/apistore/`, tests mirror it under `test/`). Package names in this file are written without the prefix, for example `shared.config`. So far code exists only in `shared/` and `identity/`; add folders as each task needs them.
 
 ## Architecture rules
 

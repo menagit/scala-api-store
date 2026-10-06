@@ -1,4 +1,4 @@
-package com.mendev.apistore.controllers
+package com.mendev.apistore.shared.health.web
 
 import com.mendev.apistore.shared.db.TestDatabase
 import org.apache.pekko.stream.Materializer

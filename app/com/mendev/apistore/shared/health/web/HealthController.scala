@@ -1,4 +1,4 @@
-package com.mendev.apistore.controllers
+package com.mendev.apistore.shared.health.web
 
 import com.mendev.apistore.shared.health.HealthCheck
 import com.mendev.apistore.shared.web.ErrorResponse

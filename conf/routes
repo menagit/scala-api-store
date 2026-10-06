@@ -2,6 +2,6 @@
 # This file defines all application routes (Higher priority routes first)
 # https://www.playframework.com/documentation/latest/ScalaRouting
 # ~~~~
-GET     /health     com.mendev.apistore.controllers.HealthController.health
+GET     /health     com.mendev.apistore.shared.health.web.HealthController.health
 POST  /auth/sign-up  com.mendev.apistore.identity.infrastructure.web.AuthController.register
 
