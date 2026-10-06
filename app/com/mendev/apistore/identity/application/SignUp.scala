@@ -18,12 +18,30 @@ class SignUp @Inject() (idGenerator: IdGenerator,
                         runner: TxRunner
 )(implicit ec: ExecutionContext) {
 
+  private def emailError(email: String): Option[FieldError] = {
+    if(!User.isValidEmail(email)){
+      Some(FieldError("email", "must be in the text@domain.com or .co format"))
+    }
+    else None
+  }
+
+  private def passwordError(pwd: String):   Option[FieldError] = {
+    if(!User.isValidPassword(pwd)){
+      Some(FieldError("password", s"must be between ${User.MinPasswordLength} and ${User.MaxPasswordLength} characters"))
+    }
+    else None
+  }
+
   def execute(command: SignUpCommand): Future[Either[AppError, SignUpResponse]] = {
-    if(!User.isValidEmail(command.email)){
+    val pwdValidation = passwordError(command.password)
+    val emailValidation = emailError(command.email)
+    val errors = List(pwdValidation,emailValidation).flatten
+    if(!errors.isEmpty){
       Future.successful(
-        Left(AppError.Validation("Invalid request", List(FieldError("email", "must be in the text@domain.com or .co format"))))
+        Left(AppError.Validation("Invalid request", errors))
       )
-    } else {
+    }
+    else {
       //Not yet needed it's just a string for now...
       val hashed: Future[String] = Future {
         pwdHasher.hash(command.password)

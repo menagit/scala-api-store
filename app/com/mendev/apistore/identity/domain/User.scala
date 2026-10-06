@@ -12,7 +12,15 @@ object User {
 
   private val regex = """[^@\s]+@[^@\s]+\.(com|co)""".r
 
+  val MinPasswordLength = 8
+  val MaxPasswordLength = 16
+
   def isValidEmail(email: String): Boolean = {
     regex.matches(email)
+  }
+
+  def isValidPassword(password: String): Boolean = {
+    val pwdLth = password.codePointCount(0,password.length)
+    pwdLth>=MinPasswordLength && pwdLth <= MaxPasswordLength
   }
 }
