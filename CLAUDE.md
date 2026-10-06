@@ -48,7 +48,9 @@ app/com/mendev/apistore/
   shopping/          application/     use cases and ports (traits)
   ordering/          infrastructure/
   payments/            web/           thin REST controllers
-  notifications/       persistence/   Relate repositories
+  notifications/       persistence/   Relate repositories, row-shaped entities and the mapping to the domain
+                       security/      adapters for security ports (Argon2PasswordHasher)
+                       id/            id generators (UuidV7Generator)
   graphql/         one top-level adapter; may call any context's use cases
   controllers/     the first endpoint (HealthController); context controllers move to each context's web/
 conf/              application.conf, routes, db/migration
@@ -65,6 +67,7 @@ All code is under the package prefix `com.mendev.apistore` (folder `app/com/mend
 - Only IDs, plain values and read models cross a context boundary. Never another context's entity or repository.
 - `shared` contains no domain concepts and depends on no context, except the caller identity (`Actor`, `Role`).
 - No Play types in the application layer (use cases and ports). `TxRunner` uses only `java.sql.Connection`, `Future` and `Either`. Play's `Database` appears only in `PlayDbTxRunner` and `DbModule`.
+- Infrastructure has no loose classes at its root: each adapter goes in a subfolder named for what it does (`web`, `persistence`, `security`, `id`).
 - Controllers and resolvers are thin: parse, call a use case, map the result. No business rules in them.
 - Authorization in two layers: action builders at the edge (401/403), and an explicit `Actor` in every use case that acts for a user (404 for records that aren't yours).
 - Events go through a transactional outbox (`shared_event`): written in the same transaction as the change, delivered by a poller, at least once. Handlers must be idempotent.
@@ -81,11 +84,14 @@ All code is under the package prefix `com.mendev.apistore` (folder `app/com/mend
 - Secrets use the `Secret` value class so they never print. Never log passwords, tokens or token hashes.
 - Configuration: one root `AppConfig`, read once at startup by `ConfigModule`. Required variables use `${NAME}` (no `?`) so a missing one stops the app. Optional ones have a default (for example `DB_POOL_SIZE`).
 - JDBC is blocking: run it through `TxRunner` on the dedicated `db-dispatcher` pool, never on Play's request threads. Repository methods take the connection explicitly. `TxRunner` rolls back on `Left` and on exception.
-- Relate: `import com.lucidchart.relate._`, `sql"..."`, and pass the connection explicitly as the second parameter list, for example `.executeUpdate()(conn)`.
+- Relate: `import com.lucidchart.relate.*`, `sql"..."` (the `${}` values are bound as `?` parameters, never concatenated), and pass the connection explicitly as the second parameter list, for example `.executeUpdate()(conn)`.
+- Repositories map between the domain and a row-shaped entity in `persistence` (`UserEntity`, with `fromDomain` and `toDomain` in its companion). The entity's `toString` must not print secrets. A unique-key violation is turned into `AppError.Conflict` by checking the constraint name in the message; any other SQL error is rethrown.
+- Passwords are hashed with Argon2id behind the `PasswordHasher` port (`hash` and `verify`). The salt is inside the encoded hash. Validation rules (password length, names, email normalization) live in the domain, and all field errors are reported together.
 
 ## Database conventions
 
 - Tables: snake_case, singular, context prefix (`identity_user`). Columns snake_case, references `<thing>_id`, flags as facts (`is_disabled`).
+- Table names are lowercase in SQL. MySQL on Linux is case-sensitive for table names.
 - Keys: `id BIGINT UNSIGNED AUTO_INCREMENT`. Users and orders also have `public_id BINARY(16)` (UUID v7 from the app). Only `public_id` goes in URLs.
 - Money `DECIMAL(12,2)`, percentages `DECIMAL(5,2)`. Time `DATETIME(6)` in UTC.
 - `created_at` and `updated_at` on every table, set by the app. Append-only tables (history, `shared_event`) have only `created_at` (`shared_event` also has `processed_at`).
@@ -95,7 +101,7 @@ All code is under the package prefix `com.mendev.apistore` (folder `app/com/mend
 - No foreign keys at all. Integrity comes from application rules and unique indexes. Add an index on every join and filter column.
 - Soft delete only for products (`deleted_at`). Everything else is hard-deleted.
 - Stock changes use one atomic statement (`... WHERE id = ? AND stock >= ?`) and check that exactly one row changed.
-- Flyway: one flat folder `conf/db/migration`, one global version sequence, context in the file name (`V3__identity_create_user.sql`, `V1__shared_create_event.sql`). The runner (`FlywayMigrator`) starts with the app. Never edit a migration that has been applied; add a new one.
+- Flyway: one flat folder `conf/db/migration`, one global version sequence, context in the file name (`V2__identity_create_user.sql`, `V1__shared_create_event.sql`). The runner (`FlywayMigrator`) starts with the app. Never edit a migration that has been applied; add a new one.
 - Each context's tables are added in the phase that builds that context, not up front.
 
 ## Testing

@@ -18,12 +18,23 @@ class SignUp @Inject() (idGenerator: IdGenerator,
                         runner: TxRunner
 )(implicit ec: ExecutionContext) {
 
+
+
   def execute(command: SignUpCommand): Future[Either[AppError, SignUpResponse]] = {
-    if(!User.isValidEmail(command.email)){
+    val email = User.normalizeEmail(command.email)
+    val firstName = command.firstName.strip()
+    val lastName = command.lastName.strip()
+    val pwdValidation = passwordError(command.password)
+    val emailValidation = emailError(email)
+    val errors = List(pwdValidation,emailValidation,
+      nameError("firstName",firstName),
+      nameError("lastName",lastName)).flatten
+    if(!errors.isEmpty){
       Future.successful(
-        Left(AppError.Validation("Invalid request", List(FieldError("email", "must be in the text@domain.com or .co format"))))
+        Left(AppError.Validation("Invalid request", errors))
       )
-    } else {
+    }
+    else {
       //Not yet needed it's just a string for now...
       val hashed: Future[String] = Future {
         pwdHasher.hash(command.password)
@@ -32,9 +43,9 @@ class SignUp @Inject() (idGenerator: IdGenerator,
         val now = clock.instant()
         val user = User(
           publicId = idGenerator.generatePublicId(),
-          email = command.email,
-          firstName = command.firstName,
-          lastName = command.lastName,
+          email = email,
+          firstName = firstName,
+          lastName = lastName,
           passwordHash = hash,
           role = Client,
           createdAt = now,
@@ -47,4 +58,20 @@ class SignUp @Inject() (idGenerator: IdGenerator,
       }
     }
   }
+
+  private def emailError(email: String): Option[FieldError] =
+    if (User.isValidEmail(email)) None
+    else Some(FieldError("email", s"must be in the text@domain.com or .co format, up to ${User.MaxEmailLength} characters"))
+
+  private def passwordError(pwd: String):   Option[FieldError] = {
+    if(!User.isValidPassword(pwd)){
+      Some(FieldError("password", s"must be between ${User.MinPasswordLength} and ${User.MaxPasswordLength} characters"))
+    }
+    else None
+  }
+
+  private def nameError(field: String, name: String): Option[FieldError] =
+    if (User.isValidName(name)) None
+    else Some(FieldError(field, s"must not be blank and at most ${User.MaxNameLength} characters"))
+
 }
