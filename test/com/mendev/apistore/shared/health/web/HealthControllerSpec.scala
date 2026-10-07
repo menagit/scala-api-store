@@ -32,7 +32,9 @@ class HealthControllerSpec extends PlaySpec with GuiceOneAppPerSuite {
           "app.mail.port"         -> 1025,
           "app.mail.user"         -> "",
           "app.mail.password"     -> "",
-          "app.mail.from"         -> "test@apistore.local"
+          "app.mail.from"         -> "test@apistore.local",
+          "app.jwt.secret"        -> "test-secret-test-secret-test-secret-1234",
+          "app.jwt.access-token-ttl" -> "2 minutes"
         )
       )
       .build()

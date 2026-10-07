@@ -19,7 +19,7 @@ class RelateUserRepository extends  UserRepository{
         val SQL = sql"INSERT INTO identity_user " +
           sql" (public_id, email, password_hash, first_name, last_name, role, token_version, created_at, updated_at) "+
           sql" VALUES "+
-          sql"(${uuidToBytes(userEntity.publicId)}, ${userEntity.email}, ${userEntity.passwordHash}, ${userEntity.firstName},"+
+          sql"(${UserEntity.uuidToBytes(userEntity.publicId)}, ${userEntity.email}, ${userEntity.passwordHash}, ${userEntity.firstName},"+
           sql"${userEntity.lastName}, ${userEntity.role}, ${userEntity.tokenVersion}, ${userEntity.createdAt}, ${userEntity.updatedAt}) "
       SQL.executeUpdate()(conn)
       Right(())
@@ -30,21 +30,17 @@ class RelateUserRepository extends  UserRepository{
 
   }
 
+  override def findByEmail(email: String, conn: Connection): Either[AppError, Option[User]] = {
+    val entity = sql"""
+      SELECT public_id, email, password_hash, first_name, last_name, role, token_version, created_at, updated_at
+      FROM identity_user
+      WHERE email = $email
+    """.asSingleOption(UserEntity.fromRow)(conn)
+
+    Right(entity.map(UserEntity.toDomain))
+  }
+
   private def isEmailKey(e: SQLIntegrityConstraintViolationException): Boolean =
     Option(e.getMessage).exists(_.contains("uk_identity_user_email"))
 
-  /** Conversion Helper Method
-   * @param uuid
-   * @return
-   */
-  private def uuidToBytes(uuid: java.util.UUID): Array[Byte]={
-    ByteBuffer
-      //empty 16 byte buffer
-      .allocate(16)
-      //writes 8 bytes and return the same buffer
-      .putLong(uuid.getMostSignificantBits)
-      //writes 8 bytes and return the same buffer
-      .putLong(uuid.getLeastSignificantBits)
-      .array()
-  }
 }

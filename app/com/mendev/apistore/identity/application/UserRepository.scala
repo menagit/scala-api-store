@@ -7,4 +7,5 @@ import java.sql.Connection
 
 trait UserRepository {
   def save(user: User, conn: Connection): Either[AppError, Unit]
+  def findByEmail(email: String, conn: Connection): Either[AppError, Option[User]]
 }

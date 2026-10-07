@@ -1,6 +1,6 @@
 package com.mendev.apistore.identity.infrastructure.web
 
-import com.mendev.apistore.identity.application.{SignUp, SignUpCommand}
+import com.mendev.apistore.identity.application.{SignIn, SignInCommand, SignUp, SignUpCommand}
 import com.mendev.apistore.shared.*
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.web.ErrorResponse
@@ -9,13 +9,22 @@ import jakarta.inject.{Inject, Singleton}
 import play.api.http.MimeTypes
 import play.api.libs.circe.Circe
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
-
+import com.mendev.apistore.shared.actions.RateLimitedAction
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AuthController @Inject() (cc: ControllerComponents, signUpUseCase: SignUp)(implicit ec: ExecutionContext)
+class AuthController @Inject() (
+                                 cc: ControllerComponents,
+                                 signUpUseCase: SignUp,
+                                 signInUseCase: SignIn,
+                                 rateLimited: RateLimitedAction
+                               )(implicit ec: ExecutionContext)
   extends AbstractController(cc) with Circe {
 
+  /**
+   * SignUp Endpoint
+   * @return
+   */
   def register: Action[String] = Action.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, SignUpCommand] =
       io.circe.parser.decode[SignUpRequest](request.body).left.map(_ => invalidBody).flatMap(toCommand)
@@ -35,13 +44,46 @@ class AuthController @Inject() (cc: ControllerComponents, signUpUseCase: SignUp)
     }
   }
 
+  /**
+   * SignIn Endpoint
+   * @return
+   */
+  def login: Action[String] = (Action andThen rateLimited("sign-in")).async(parse.tolerantText) { request =>
+  //def login: Action[String] = Action.async(parse.tolerantText) { request =>
+    val parsed: Either[AppError, SignInCommand] =
+      io.circe.parser.decode[SignInRequest](request.body).left.map(_ => invalidBody).flatMap(toSignInCommand)
+
+    parsed match {
+      case Left(error) =>
+        Future.successful(ErrorResponse.result(error))
+      case Right(command) =>
+        signInUseCase.execute(command).map {
+          case Right(token) =>
+            Ok(
+              Json.obj(
+                "access_token" -> Json.fromString(token.value),
+                "token_type"   -> Json.fromString("Bearer"),
+                "expires_in"   -> Json.fromLong(token.expiresInSeconds)
+              ).noSpaces
+            ).as(MimeTypes.JSON).withHeaders("Cache-Control" -> "no-store", "Pragma" -> "no-cache")
+          case Left(error) =>
+            ErrorResponse.result(error)
+        }
+    }
+  }
+
   private val invalidBody: AppError =
     AppError.Validation("Invalid request", List(FieldError("body", "is not valid for this endpoint")))
 
+  /**
+   * Helper method to create the signUp command
+   * @param req
+   * @return
+   */
   private def toCommand(req: SignUpRequest): Either[AppError, SignUpCommand] = {
     (req.email, req.password, req.firstName, req.lastName) match {
       case (Some(email), Some(password), Some(firstName), Some(lastName)) =>
-        Right(SignUpCommand(email = email, firstName = firstName, lastName = lastName, password = password))
+        Right(SignUpCommand(email,firstName, lastName, password))
       case _ =>
         val missing = List("email" -> req.email, "password" -> req.password,
           "firstName" -> req.firstName, "lastName" -> req.lastName)
@@ -49,5 +91,20 @@ class AuthController @Inject() (cc: ControllerComponents, signUpUseCase: SignUp)
         Left(AppError.Validation("Invalid request", missing))
     }
   }
+
+  /**
+   * Helper method to create the signIn command
+   * @param req
+   * @return
+   */
+  private def toSignInCommand(req: SignInRequest): Either[AppError, SignInCommand] =
+    (req.email, req.password) match {
+      case (Some(email), Some(password)) =>
+        Right(SignInCommand(email,password))
+      case _ =>
+        val missing = List("email" -> req.email, "password" -> req.password)
+          .collect { case (name, None) => FieldError(name, "is required") }
+        Left(AppError.Validation("Invalid request", missing))
+    }
 
 }
