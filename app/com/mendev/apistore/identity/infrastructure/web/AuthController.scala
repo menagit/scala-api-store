@@ -9,14 +9,15 @@ import jakarta.inject.{Inject, Singleton}
 import play.api.http.MimeTypes
 import play.api.libs.circe.Circe
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
-
+import com.mendev.apistore.shared.actions.RateLimitedAction
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AuthController @Inject() (
                                  cc: ControllerComponents,
                                  signUpUseCase: SignUp,
-                                 signInUseCase: SignIn
+                                 signInUseCase: SignIn,
+                                 rateLimited: RateLimitedAction
                                )(implicit ec: ExecutionContext)
   extends AbstractController(cc) with Circe {
 
@@ -47,7 +48,8 @@ class AuthController @Inject() (
    * SignIn Endpoint
    * @return
    */
-  def login: Action[String] = Action.async(parse.tolerantText) { request =>
+  def login: Action[String] = (Action andThen rateLimited("sign-in")).async(parse.tolerantText) { request =>
+  //def login: Action[String] = Action.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, SignInCommand] =
       io.circe.parser.decode[SignInRequest](request.body).left.map(_ => invalidBody).flatMap(toSignInCommand)
 
