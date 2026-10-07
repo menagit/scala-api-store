@@ -21,10 +21,14 @@ class AuthController @Inject() (
                                )(implicit ec: ExecutionContext)
   extends AbstractController(cc) with Circe {
 
+  //AbstractController(cc) this calls the parent constructor, like super(cc) in Java. It gives us Action, Ok, BadRequest, and the rest
+  //Circe == Jackson
   /**
    * SignUp Endpoint
    * @return
    */
+
+    //just play json library -> replace circe
   def register: Action[String] = Action.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, SignUpCommand] =
       io.circe.parser.decode[SignUpRequest](request.body).left.map(_ => invalidBody).flatMap(toCommand)

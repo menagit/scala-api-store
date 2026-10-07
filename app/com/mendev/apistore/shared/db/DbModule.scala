@@ -7,6 +7,13 @@ import play.api.db.Database
 
 class DbModule extends AbstractModule {
 
+  /**
+   * Second option to bind in a guice module, need to look up by name
+   * to not get the wrong pool (the request pool instead of the jdbc one)
+   * @param db
+   * @param actorSystem
+   * @return
+   */
   @Provides
   @Singleton
   def txRunner(db: Database, actorSystem: ActorSystem): TxRunner =
