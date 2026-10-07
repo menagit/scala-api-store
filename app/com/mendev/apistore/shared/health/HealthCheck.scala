@@ -3,14 +3,12 @@ package com.mendev.apistore.shared.health
 import com.lucidchart.relate.*
 import com.mendev.apistore.shared.db.TxRunner
 import com.mendev.apistore.shared.error.AppError
-import jakarta.inject.{Inject, Singleton}
 import play.api.Logging
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-@Singleton
-class HealthCheck @Inject() (tx: TxRunner) extends Logging {
+class HealthCheck (tx: TxRunner) extends Logging {
 
   def check(): Future[Either[AppError, Unit]] =
     tx.run[AppError, Unit] { conn =>

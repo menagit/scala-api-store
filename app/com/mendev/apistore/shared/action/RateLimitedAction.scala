@@ -3,13 +3,12 @@ package com.mendev.apistore.shared.actions
 import com.mendev.apistore.shared.error.AppError
 import com.mendev.apistore.shared.security.RateLimiter
 import com.mendev.apistore.shared.web.ErrorResponse
-import jakarta.inject.{Inject, Singleton}
 import play.api.mvc.{ActionFilter, Request, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton
-class RateLimitedAction @Inject() (limiter: RateLimiter)(implicit ec: ExecutionContext) {
+
+class RateLimitedAction (limiter: RateLimiter)(implicit ec: ExecutionContext) {
 
   def apply(scope: String): ActionFilter[Request] = new ActionFilter[Request] {
     override protected def executionContext: ExecutionContext = ec

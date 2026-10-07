@@ -1,14 +1,13 @@
 package com.mendev.apistore.identity.infrastructure.id
 
 import com.mendev.apistore.identity.application.IdGenerator
-import jakarta.inject.{Inject, Singleton}
 
 import java.security.SecureRandom
 import java.time.Clock
 import java.util.UUID
 
-@Singleton
-class UuidV7Generator @Inject() (clock: Clock) extends IdGenerator {
+
+class UuidV7Generator (clock: Clock) extends IdGenerator {
 
   private val random = new SecureRandom()
 

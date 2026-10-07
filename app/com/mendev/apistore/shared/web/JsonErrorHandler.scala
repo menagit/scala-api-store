@@ -1,14 +1,12 @@
 package com.mendev.apistore.shared.web
 
 import com.mendev.apistore.shared.error.AppError
-import jakarta.inject.Singleton
 import play.api.Logging
 import play.api.http.HttpErrorHandler
 import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.Future
 
-@Singleton
 class JsonErrorHandler extends HttpErrorHandler with Logging {
 
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {

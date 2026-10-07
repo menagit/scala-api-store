@@ -3,14 +3,10 @@ package com.mendev.apistore.identity.infrastructure.persistence
 import com.mendev.apistore.identity.application.UserRepository
 import com.mendev.apistore.identity.domain.User
 import com.mendev.apistore.shared.error.AppError
-import jakarta.inject.Singleton
-import java.nio.ByteBuffer
-import java.util.UUID
 import java.sql.Connection
 import com.lucidchart.relate.*
 import java.sql.SQLIntegrityConstraintViolationException
 
-@Singleton
 class RelateUserRepository extends  UserRepository{
 
   override def save(user: User, conn: Connection): Either[AppError, Unit] = {

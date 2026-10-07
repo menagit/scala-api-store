@@ -5,15 +5,13 @@ import com.mendev.apistore.shared.*
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.web.ErrorResponse
 import io.circe.Json
-import jakarta.inject.{Inject, Singleton}
 import play.api.http.MimeTypes
 import play.api.libs.circe.Circe
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import com.mendev.apistore.shared.actions.RateLimitedAction
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton
-class AuthController @Inject() (
+class AuthController (
                                  cc: ControllerComponents,
                                  signUpUseCase: SignUp,
                                  signInUseCase: SignIn,
@@ -21,10 +19,14 @@ class AuthController @Inject() (
                                )(implicit ec: ExecutionContext)
   extends AbstractController(cc) with Circe {
 
+  //AbstractController(cc) this calls the parent constructor, like super(cc) in Java. It gives us Action, Ok, BadRequest, and the rest
+  //Circe == Jackson
   /**
    * SignUp Endpoint
    * @return
    */
+
+    //just play json library -> replace circe
   def register: Action[String] = Action.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, SignUpCommand] =
       io.circe.parser.decode[SignUpRequest](request.body).left.map(_ => invalidBody).flatMap(toCommand)

@@ -3,14 +3,12 @@ package com.mendev.apistore.shared.health.web
 import com.mendev.apistore.shared.health.HealthCheck
 import com.mendev.apistore.shared.web.ErrorResponse
 import io.circe.Json
-import jakarta.inject.{Inject, Singleton}
 import play.api.http.MimeTypes
 import play.api.mvc.{Action, AnyContent, BaseController, ControllerComponents}
 
 import scala.concurrent.ExecutionContext
 
-@Singleton
-class HealthController @Inject() (
+class HealthController (
                                    val controllerComponents: ControllerComponents,
                                    healthCheck: HealthCheck
                                  )(implicit ec: ExecutionContext)
