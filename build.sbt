@@ -16,7 +16,6 @@ scalacOptions ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  guice,
   jdbc,
   "com.lucidchart" %% "relate" % "5.1.0",
   "com.mysql" % "mysql-connector-j" % "9.7.0",

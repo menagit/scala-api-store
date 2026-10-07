@@ -1,12 +1,10 @@
 package com.mendev.apistore.shared.db
 
 import com.mendev.apistore.shared.config.DatabaseConfig
-import jakarta.inject.{Inject, Singleton}
 import org.flywaydb.core.Flyway
 import play.api.Logging
 
-@Singleton
-class FlywayMigrator @Inject() (db: DatabaseConfig) extends Logging {
+class FlywayMigrator (db: DatabaseConfig) extends Logging {
 
   migrate()
 

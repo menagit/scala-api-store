@@ -3,9 +3,7 @@ package com.mendev.apistore.identity.infrastructure.security
 import com.mendev.apistore.identity.application.PasswordHasher
 import com.password4j.types.Argon2
 import com.password4j.{Argon2Function, Password}
-import jakarta.inject.Singleton
 
-@Singleton
 class Argon2PasswordHasher extends PasswordHasher {
 
   import Argon2PasswordHasher.*

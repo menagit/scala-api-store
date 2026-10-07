@@ -7,13 +7,11 @@ import com.mendev.apistore.shared.error.AppError
 import com.mendev.apistore.shared.security.{Actor, Client, Manager, Role, TokenClaims, TokenVerifier}
 import io.circe.Json
 import io.circe.parser.parse
-import jakarta.inject.{Inject, Singleton}
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim, JwtOptions}
 
 import java.time.Clock
 
-@Singleton
-class JwtTokenService @Inject() (config: JwtConfig, clock: Clock) extends TokenIssuer with TokenVerifier {
+class JwtTokenService (config: JwtConfig, clock: Clock) extends TokenIssuer with TokenVerifier {
   import JwtTokenService.*
 
   private val key = config.secret.value

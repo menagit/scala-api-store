@@ -4,14 +4,11 @@ import com.mendev.apistore.identity.domain.User
 import com.mendev.apistore.shared.db.TxRunner
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.security.Client
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
 
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton
-class SignUp @Inject() (idGenerator: IdGenerator,
+class SignUp (idGenerator: IdGenerator,
                         userRepo: UserRepository,
                         clock: Clock,
                         pwdHasher: PasswordHasher,

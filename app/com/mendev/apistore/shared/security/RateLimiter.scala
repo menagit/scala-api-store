@@ -1,12 +1,10 @@
 package com.mendev.apistore.shared.security
 
 import io.github.bucket4j.{Bandwidth, Bucket}
-import jakarta.inject.Singleton
 
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
-@Singleton
 class RateLimiter {
   import RateLimiter.*
 

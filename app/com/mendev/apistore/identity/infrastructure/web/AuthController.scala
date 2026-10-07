@@ -5,15 +5,13 @@ import com.mendev.apistore.shared.*
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.web.ErrorResponse
 import io.circe.Json
-import jakarta.inject.{Inject, Singleton}
 import play.api.http.MimeTypes
 import play.api.libs.circe.Circe
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import com.mendev.apistore.shared.actions.RateLimitedAction
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton
-class AuthController @Inject() (
+class AuthController (
                                  cc: ControllerComponents,
                                  signUpUseCase: SignUp,
                                  signInUseCase: SignIn,

@@ -3,12 +3,11 @@ package com.mendev.apistore.identity.application
 import com.mendev.apistore.identity.domain.User
 import com.mendev.apistore.shared.db.TxRunner
 import com.mendev.apistore.shared.error.AppError
-import jakarta.inject.{Inject, Singleton}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton
-class SignIn @Inject() (
+
+class SignIn (
                          userRepo: UserRepository,
                          pwdHasher: PasswordHasher,
                          tokenIssuer: TokenIssuer,
