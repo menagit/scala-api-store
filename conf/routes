@@ -6,3 +6,4 @@ GET     /health        com.mendev.apistore.shared.health.web.HealthController.he
 POST  /auth/sign-up    com.mendev.apistore.identity.infrastructure.web.AuthController.register
 POST  /auth/sign-in    com.mendev.apistore.identity.infrastructure.web.AuthController.login
 POST  /auth/refresh    com.mendev.apistore.identity.infrastructure.web.AuthController.refresh
+POST  /auth/sign-out   com.mendev.apistore.identity.infrastructure.web.AuthController.signOut

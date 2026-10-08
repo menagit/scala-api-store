@@ -1,6 +1,6 @@
 package com.mendev.apistore.identity.infrastructure.web
 
-import com.mendev.apistore.identity.application.{SignIn, SignInCommand, SignUp, SignUpCommand}
+import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessToken, SignIn, SignInCommand, SignInResult, SignOut, SignUp, SignUpCommand}
 import com.mendev.apistore.shared.*
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.web.ErrorResponse
@@ -21,6 +21,7 @@ class AuthController (
                                  signInUseCase: SignIn,
                                  rateLimited: RateLimitedAction,
                                  refreshUseCase: RefreshAccessToken,
+                                 signOutUseCase: SignOut,
                                )(implicit ec: ExecutionContext)
   extends AbstractController(cc) with Circe {
 
@@ -101,6 +102,18 @@ class AuthController (
           case Left(error) =>
             ErrorResponse.result(error)
         }
+    }
+  }
+
+  /**
+   * Sign-out Endpoint: the cookie is the proof, no body. Success is 204 and the cookie is cleared.
+   */
+  def signOut: Action[AnyContent] = Action.async { request =>
+    val raw = request.cookies.get(AuthController.RefreshCookieName).map(_.value)
+    signOutUseCase.execute(raw).map {
+      case Right(_)    => NoContent.discardingCookies(discardRefreshCookie)
+        // 503, 500...: cookie kept for the usr to try again
+      case Left(error) => ErrorResponse.result(error)
     }
   }
 

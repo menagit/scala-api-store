@@ -1,6 +1,6 @@
 package com.mendev.apistore.identity
 
-import com.mendev.apistore.identity.application.{IdGenerator, PasswordHasher, RefreshAccessToken, RefreshTokenGenerator, SignIn, SignUp, TokenIssuer, TokenRepository, UserRepository}
+import com.mendev.apistore.identity.application.{IdGenerator, PasswordHasher, RefreshAccessToken, RefreshTokenGenerator, SignIn, SignUp, TokenIssuer, TokenRepository, UserRepository,SignOut}
 import com.mendev.apistore.identity.infrastructure.id.UuidV7Generator
 import com.mendev.apistore.identity.infrastructure.persistence.RelateUserRepository
 import com.mendev.apistore.identity.infrastructure.security.{Argon2PasswordHasher, JwtTokenService}
@@ -27,13 +27,14 @@ trait IdentityComponents {
   lazy val tokenVerifier: TokenVerifier     = jwtTokenService
 
   lazy val signUp: SignUp = new SignUp(idGenerator, userRepository, clock, passwordHasher, txRunner)(executionContext)
+  lazy val signOut: SignOut = new SignOut(userRepository, tokenRepository, refreshTokenGenerator, txRunner, clock)
   lazy val signIn: SignIn = new SignIn(
     userRepository, passwordHasher, tokenIssuer, refreshTokenGenerator, tokenRepository,
     txRunner, clock, appConfig.jwt.refreshTokenTtl
   )(executionContext)
 
   lazy val authController: AuthController =
-    new AuthController(controllerComponents, signUp, signIn, rateLimitedAction, refreshAccessToken)(executionContext)
+    new AuthController(controllerComponents, signUp, signIn, rateLimitedAction, refreshAccessToken,signOut)(executionContext)
 
   lazy val refreshAccessToken: RefreshAccessToken = new RefreshAccessToken(
     userRepository, tokenRepository, refreshTokenGenerator, tokenIssuer,
