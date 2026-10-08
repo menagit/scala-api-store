@@ -15,7 +15,7 @@ API Store: an e-commerce backend with REST and GraphQL, built as a modular monol
 
 ## Stack
 
-Scala 2.13.18 with `-Xsource:3` · Play 3.0.11 on Pekko · JDK 17 · sbt 1.13.0 · MySQL 8.4 (Docker) · Relate 5.1.0 over JDBC/HikariCP (no ORM) · Flyway (13.x, Flyway 14 needs Java 21) · circe + play-circe · Sangria · Guice · PureConfig · ScalaTest + scalatestplus-play + testcontainers-scala · sbt-scoverage · play-mailer + Twirl (Mailpit in dev) · Thumbnailator · Play cache (Caffeine) · Bucket4j · Argon2id (password4j) · jwt-scala · play-swagger.
+Scala 2.13.18 with `-Xsource:3` · Play 3.0.11 on Pekko · JDK 17 · sbt 1.13.0 · MySQL 8.4 (Docker) · Relate 5.1.0 over JDBC/HikariCP (no ORM) · Flyway (13.x, Flyway 14 needs Java 21) · circe + play-circe · Sangria · Play compile-time DI (no Guice) · PureConfig · ScalaTest + scalatestplus-play + testcontainers-scala · sbt-scoverage · play-mailer + Twirl (Mailpit in dev) · Thumbnailator · Play cache (Caffeine) · Bucket4j · Argon2id (password4j) · jwt-scala · play-swagger.
 
 A library is added to `build.sbt` only by the task that first needs it.
 
@@ -42,8 +42,9 @@ docker compose up -d            # MySQL (3306) and Mailpit (1025, UI on 8025), b
 
 ```
 app/com/mendev/apistore/
-  shared/          cross-cutting only: config, db (Flyway, TxRunner), error (AppError), web (ErrorResponse, JsonErrorHandler), health (HealthCheck and its controller in health/web), filters, actions, Actor/Role
-  identity/        bounded contexts, each with:
+  AppLoader, AppComponents   wiring: the loader and the class that mixes in every components trait
+  shared/          cross-cutting only: SharedComponents (wiring), config, db (Flyway, TxRunner), error (AppError), web (ErrorResponse, JsonErrorHandler), health (HealthCheck and its controller in health/web), filters, actions, Actor/Role
+  identity/        bounded contexts, each with <Context>Components (wiring, at the context root) and:
   catalog/           domain/          entities, value objects, rules (no Play, no SQL)
   shopping/          application/     use cases and ports (traits)
   ordering/          infrastructure/
@@ -65,27 +66,42 @@ All code is under the package prefix `com.mendev.apistore` (folder `app/com/mend
 - When a context needs something from one that already depends on it, it defines a small trait and the other implements it (`PendingOrderChecker` in catalog, implemented by ordering; `TokenVerifier` in shared, implemented by identity).
 - Only IDs, plain values and read models cross a context boundary. Never another context's entity or repository.
 - `shared` contains no domain concepts and depends on no context, except the caller identity (`Actor`, `Role`, `TokenClaims`). `shared/security` also holds the cross-cutting security tools (`TokenVerifier`, `RateLimiter`).
-- No Play types in the application layer (use cases and ports). `TxRunner` uses only `java.sql.Connection`, `Future` and `Either`. Play's `Database` appears only in `PlayDbTxRunner` and `DbModule`.
+- No Play types in the application layer (use cases and ports). `TxRunner` uses only `java.sql.Connection`, `Future` and `Either`. Play's `Database` appears only in `PlayDbTxRunner` and `SharedComponents`.
+- Use cases are classes in `application` named `<Verb><Thing>UseCase` (`SignInUseCase`), with one public `execute`. In the components trait the instance is `signInUseCase`.
 - Infrastructure has no loose classes at its root: each adapter goes in a subfolder named for what it does (`web`, `persistence`, `security`, `id`).
 - Controllers and resolvers are thin: parse, call a use case, map the result. No business rules in them.
 - Authorization in two layers: action builders at the edge (401/403), and an explicit `Actor` in every use case that acts for a user (404 for records that aren't yours).
 - Events go through a transactional outbox (`shared_event`): written in the same transaction as the change, delivered by a poller, at least once. Handlers must be idempotent.
 
+## Dependency injection
+
+- Play compile-time DI, no Guice (ADR 0003). `play.application.loader` points to `AppLoader`, which builds `AppComponents`. `AppComponents` extends Play's `BuiltInComponentsFromContext` and mixes in `SharedComponents` and one components trait per context (`IdentityComponents`).
+- Every object is a `lazy val` in its area's trait, built with `new`. That gives one instance, created on first use, in the right order. Never a `def` (a new object on each call) and never a plain `val` in a trait (initialization order).
+- A trait reaches Play and `shared` through a self-type: `this: ContextBasedBuiltInComponents with SharedComponents =>`. When one context needs another, it declares an abstract member for the one interface it needs (for example `def productLookup: ProductLookup`), never a self-type on the other context's trait.
+- Classes carry no DI annotations (`@Inject`, `@Singleton`). A class is a plain constructor; how it is wired lives only in the components traits.
+- A new class is added to its context's trait. A new controller is also passed to `new Routes(...)` in `AppComponents`, in the order of `conf/routes`.
+- `AppComponents` overrides `httpErrorHandler` with `JsonErrorHandler` and forces `flywayMigrator`, so migrations run at startup.
+
 ## Scala conventions
 
 - Braces style, Scala 2.13 with `-Xsource:3`. No Scala 3 `enum`: use `sealed trait` + `case object` / `case class` for statuses and errors.
 - Expected failures are values: `Future[Either[AppError, A]]`. Throw only for bugs. `AppError` lives in `shared.error`; `ErrorResponse` turns it into a status and the one JSON error shape. Never send stack traces or exception messages to the client.
-- Play 3 uses `jakarta.inject` (`@Inject`, `@Singleton`), not `javax.inject`.
 - No custom annotations for behavior. Use composable Play actions.
 - Nullable values are `Option`. Never `null`, never `.get` on `Option`.
 - Money is `BigDecimal`, never `Double`. Rounding is explicit (half up, 2 decimals).
 - Time is `java.time.Instant`, taken from an injected `java.time.Clock` (a fixed clock in tests). Never `Instant.now()` directly.
 - Secrets use the `Secret` value class so they never print. Never log passwords, tokens or token hashes.
-- Configuration: one root `AppConfig`, read once at startup by `ConfigModule`. Required variables use `${NAME}` (no `?`) so a missing one stops the app. Optional ones have a default (for example `DB_POOL_SIZE`).
-- JDBC is blocking: run it through `TxRunner` on the dedicated `db-dispatcher` pool, never on Play's request threads. Repository methods take the connection explicitly. `TxRunner` rolls back on `Left` and on exception.
+- Configuration: one root `AppConfig`, read once at startup in `SharedComponents`. Required variables use `${NAME}` (no `?`) so a missing one stops the app. Optional ones have a default (for example `DB_POOL_SIZE`).
+- JDBC is blocking: run it through `TxRunner` on the dedicated `db-dispatcher` pool, never on Play's request threads. Repository methods take the connection explicitly. `TxRunner` rolls back on `Left` and on exception, so a transaction that must keep its writes (reuse detection in `RefreshAccessTokenUseCase`) returns `Right` and the error is made after the commit.
 - Relate: `import com.lucidchart.relate.*`, `sql"..."` (the `${}` values are bound as `?` parameters, never concatenated), and pass the connection explicitly as the second parameter list, for example `.executeUpdate()(conn)`.
 - Repositories map between the domain and a row-shaped entity in `persistence` (`UserEntity`, with `fromDomain` and `toDomain` in its companion). The entity's `toString` must not print secrets. A unique-key violation is turned into `AppError.Conflict` by checking the constraint name in the message; any other SQL error is rethrown.
 - Passwords are hashed with Argon2id behind the `PasswordHasher` port (`hash` and `verify`). The salt is inside the encoded hash. Validation rules (password length, names, email normalization) live in the domain, and all field errors are reported together.
+
+## Security
+
+- Access token: a short JWT sent as a Bearer token, with a `token_version` claim. A token whose version is older than the user's is dead (checked by `AuthenticatedAction`, planned in T2.5.1).
+- Refresh token: 32 random bytes; only its SHA-256 hash is stored (`identity_token`). It travels in a cookie that is `HttpOnly`, `Secure`, `SameSite=Strict` and limited to `Path=/auth`. Refresh rotates it in one transaction. Replaying a revoked token revokes all the user's refresh tokens. Sign-out revokes the token and raises `token_version`. Every refresh failure gives the same 401 message.
+- Play's CSRF filter is off (removed from `httpFilters` in `AppComponents`). The defenses are Bearer tokens on the API, the SameSite=Strict cookie limited to `/auth`, and no wildcard CORS.
 
 ## Database conventions
 
@@ -105,17 +121,17 @@ All code is under the package prefix `com.mendev.apistore` (folder `app/com/mend
 
 ## Testing
 
-- Test business rules, use cases and error paths. Simple wiring (modules, config, trivial controllers) doesn't need its own test. The project minimum is 50% statements (planned to be enforced in CI, see Commands).
+- Test business rules, use cases and error paths. Simple wiring (components traits, config, trivial controllers) doesn't need its own test. The project minimum is 50% statements (planned to be enforced in CI, see Commands).
 - Unit tests: domain and use cases, with fake repositories (a small hand-made fake of a trait is fine) and a fixed `Clock`. Style: ScalaTest `AnyWordSpec` with `Matchers` (`should`).
 - Integration tests: real MySQL through Testcontainers. One shared container for the whole test run, in `test/com/mendev/apistore/shared/db/TestDatabase`; it is migrated once, and each test cleans its own tables in `beforeEach`. It is never the development database.
-- Controller tests: `PlaySpec` with `GuiceOneAppPerSuite` (`must`), building the application with the `TestDatabase` values. Override `app.database.*`, `db.default.*` and `app.mail.*`.
+- Controller tests: `PlaySpec` with `OneAppPerSuiteWithComponents` (`must`). `components` returns `new AppComponents(context)`, with the context from `ApplicationLoader.Context.create(Environment.simple(), initialSettings = ...)`, so tests build the app the same way production does. Override `app.database.*`, `db.default.*`, `app.mail.*` and `app.jwt.*` with the `TestDatabase` values, written as strings.
 - The app fails at startup when MySQL is unreachable (Flyway runs eagerly), so the "database down" case is tested with a fake `TxRunner`.
 - Name the spec to run and the result to expect before saying a change works.
 
 ## Git
 
 - Branches: `feat/...`, `docs/...` or `chore/...`. `main` is protected and a local hook blocks commits on it.
-- Commit subjects start with `feat:`, `docs:` or `chore:`, short and lowercase after the prefix. One pull request per goal: closely related tasks may share a pull request, each task as its own commit. Squash merge. Keep pull request descriptions short.
+- Commit subjects start with `feat:`, `docs:`, `chore:` or `fix:`, short and lowercase after the prefix. One pull request per goal: closely related tasks may share a pull request, each task as its own commit. Squash merge (`gh pr merge N --squash --delete-branch`). Keep pull request descriptions short.
 
 ## Docs and ADRs
 
