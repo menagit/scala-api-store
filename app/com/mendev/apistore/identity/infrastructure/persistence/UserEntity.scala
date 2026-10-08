@@ -78,7 +78,7 @@ object UserEntity {
       updatedAt = row.instant("updated_at")
     )
 
-  private def bytesToUuid(bytes: Array[Byte]): UUID = {
+  private[persistence] def bytesToUuid(bytes: Array[Byte]): UUID = {
     val buffer = ByteBuffer.wrap(bytes)
     new UUID(buffer.getLong, buffer.getLong)
   }

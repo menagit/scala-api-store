@@ -10,12 +10,17 @@ import play.api.libs.circe.Circe
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import com.mendev.apistore.shared.actions.RateLimitedAction
 import scala.concurrent.{ExecutionContext, Future}
+import com.mendev.apistore.identity.application.{IssuedRefreshToken, SignIn, SignInCommand, SignUp, SignUpCommand}
+import play.api.mvc.{AbstractController, Action, ControllerComponents, Cookie}
+import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessToken, SignIn, SignInCommand, SignInResult, SignUp, SignUpCommand}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Cookie, DiscardingCookie, Result}
 
 class AuthController (
                                  cc: ControllerComponents,
                                  signUpUseCase: SignUp,
                                  signInUseCase: SignIn,
-                                 rateLimited: RateLimitedAction
+                                 rateLimited: RateLimitedAction,
+                                 refreshUseCase: RefreshAccessToken,
                                )(implicit ec: ExecutionContext)
   extends AbstractController(cc) with Circe {
 
@@ -60,14 +65,39 @@ class AuthController (
         Future.successful(ErrorResponse.result(error))
       case Right(command) =>
         signInUseCase.execute(command).map {
-          case Right(token) =>
+          case Right(result) =>
+            tokenResponse(result)
+            val access = result.accessToken
             Ok(
               Json.obj(
-                "access_token" -> Json.fromString(token.value),
+                "access_token" -> Json.fromString(access.value),
                 "token_type"   -> Json.fromString("Bearer"),
-                "expires_in"   -> Json.fromLong(token.expiresInSeconds)
+                "expires_in"   -> Json.fromLong(access.expiresInSeconds)
               ).noSpaces
-            ).as(MimeTypes.JSON).withHeaders("Cache-Control" -> "no-store", "Pragma" -> "no-cache")
+            ).as(MimeTypes.JSON)
+              .withHeaders("Cache-Control" -> "no-store", "Pragma" -> "no-cache")
+              .withCookies(refreshCookie(result.refreshToken))
+          case Left(error) =>
+            ErrorResponse.result(error)
+        }
+    }
+  }
+
+  /**
+   * Refresh Endpoint: the browser sends the refresh cookie, no body.
+   */
+  def refresh: Action[AnyContent] = Action.async { request =>
+    request.cookies.get(AuthController.RefreshCookieName) match {
+      case None =>
+        Future.successful(ErrorResponse.result(AppError.Unauthorized("Invalid or expired refresh token")))
+      case Some(cookie) =>
+        refreshUseCase.execute(cookie.value).map {
+          case Right(result) =>
+            tokenResponse(result)
+            // A dead token: also tell the browser to drop the cookie.
+          case Left(error: AppError.Unauthorized) =>
+            ErrorResponse.result(error).discardingCookies(discardRefreshCookie)
+            // 429, 503, 500...: the token may still be fine, so keep the cookie.
           case Left(error) =>
             ErrorResponse.result(error)
         }
@@ -108,5 +138,35 @@ class AuthController (
           .collect { case (name, None) => FieldError(name, "is required") }
         Left(AppError.Validation("Invalid request", missing))
     }
+  private def refreshCookie(token: IssuedRefreshToken): Cookie =
+    Cookie(
+      name = AuthController.RefreshCookieName,
+      value = token.value.value,
+      maxAge = Some(token.maxAgeSeconds.toInt),
+      path = "/auth",
+      secure = true,
+      httpOnly = true,
+      sameSite = Some(Cookie.SameSite.Strict)
+    )
 
+  private def tokenResponse(result: SignInResult): Result = {
+    val access = result.accessToken
+    Ok(
+      Json.obj(
+        "access_token" -> Json.fromString(access.value),
+        "token_type"   -> Json.fromString("Bearer"),
+        "expires_in"   -> Json.fromLong(access.expiresInSeconds)
+      ).noSpaces
+    ).as(MimeTypes.JSON)
+      .withHeaders("Cache-Control" -> "no-store", "Pragma" -> "no-cache")
+      .withCookies(refreshCookie(result.refreshToken))
+  }
+
+  // Same name and path as the cookie we set, or the browser ignores it.
+  private val discardRefreshCookie: DiscardingCookie =
+    DiscardingCookie(AuthController.RefreshCookieName, path = "/auth", secure = true)
+}
+
+object AuthController {
+  val RefreshCookieName = "refresh_token"
 }

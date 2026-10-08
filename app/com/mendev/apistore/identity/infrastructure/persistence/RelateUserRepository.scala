@@ -6,6 +6,7 @@ import com.mendev.apistore.shared.error.AppError
 import java.sql.Connection
 import com.lucidchart.relate.*
 import java.sql.SQLIntegrityConstraintViolationException
+import java.util.UUID
 
 class RelateUserRepository extends  UserRepository{
 
@@ -31,6 +32,16 @@ class RelateUserRepository extends  UserRepository{
       SELECT public_id, email, password_hash, first_name, last_name, role, token_version, created_at, updated_at
       FROM identity_user
       WHERE email = $email
+    """.asSingleOption(UserEntity.fromRow)(conn)
+
+    Right(entity.map(UserEntity.toDomain))
+  }
+
+  override def findByPublicId(publicId: String, conn: Connection): Either[AppError, Option[User]] = {
+    val entity = sql"""
+      SELECT public_id, email, password_hash, first_name, last_name, role, token_version, created_at, updated_at
+      FROM identity_user
+      WHERE public_id = ${UserEntity.uuidToBytes(UUID.fromString(publicId))}
     """.asSingleOption(UserEntity.fromRow)(conn)
 
     Right(entity.map(UserEntity.toDomain))
