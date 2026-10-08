@@ -10,6 +10,8 @@ import play.api.libs.circe.Circe
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import com.mendev.apistore.shared.actions.RateLimitedAction
 import scala.concurrent.{ExecutionContext, Future}
+import com.mendev.apistore.identity.application.{IssuedRefreshToken, SignIn, SignInCommand, SignUp, SignUpCommand}
+import play.api.mvc.{AbstractController, Action, ControllerComponents, Cookie}
 
 class AuthController (
                                  cc: ControllerComponents,
@@ -60,14 +62,17 @@ class AuthController (
         Future.successful(ErrorResponse.result(error))
       case Right(command) =>
         signInUseCase.execute(command).map {
-          case Right(token) =>
+          case Right(result) =>
+            val access = result.accessToken
             Ok(
               Json.obj(
-                "access_token" -> Json.fromString(token.value),
+                "access_token" -> Json.fromString(access.value),
                 "token_type"   -> Json.fromString("Bearer"),
-                "expires_in"   -> Json.fromLong(token.expiresInSeconds)
+                "expires_in"   -> Json.fromLong(access.expiresInSeconds)
               ).noSpaces
-            ).as(MimeTypes.JSON).withHeaders("Cache-Control" -> "no-store", "Pragma" -> "no-cache")
+            ).as(MimeTypes.JSON)
+              .withHeaders("Cache-Control" -> "no-store", "Pragma" -> "no-cache")
+              .withCookies(refreshCookie(result.refreshToken))
           case Left(error) =>
             ErrorResponse.result(error)
         }
@@ -108,5 +113,18 @@ class AuthController (
           .collect { case (name, None) => FieldError(name, "is required") }
         Left(AppError.Validation("Invalid request", missing))
     }
+  private def refreshCookie(token: IssuedRefreshToken): Cookie =
+    Cookie(
+      name = AuthController.RefreshCookieName,
+      value = token.value.value,
+      maxAge = Some(token.maxAgeSeconds.toInt),
+      path = "/auth",
+      secure = true,
+      httpOnly = true,
+      sameSite = Some(Cookie.SameSite.Strict)
+    )
+}
 
+object AuthController {
+  val RefreshCookieName = "refresh_token"
 }

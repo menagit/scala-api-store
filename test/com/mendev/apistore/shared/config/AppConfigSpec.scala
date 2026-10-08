@@ -12,7 +12,7 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
     """mail { host = "localhost", port = 1025, user = "", password = "", from = "no-reply@apistore.local" }"""
 
   private val jwt =
-    """jwt { secret = "test-secret-test-secret-test-secret-1234", access-token-ttl = "2 minutes" }"""
+    """jwt { secret = "test-secret-test-secret-test-secret-1234", access-token-ttl = "2 minutes", refresh-token-ttl = "30 days" }"""
 
   private val valid =
     s"""app {
@@ -39,7 +39,7 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
     s"""app {
        |  database { host = "localhost", port = 3306, name = "api_store", user = "app", password = "db-secret" }
        |  $mail
-       |  jwt { secret = "too-short", access-token-ttl = "2 minutes" }
+       |  jwt { secret = "too-short", access-token-ttl = "2 minutes" , refresh-token-ttl = "30 days"}
        |}""".stripMargin
 
   "AppConfig.load" should {
