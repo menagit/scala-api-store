@@ -7,6 +7,7 @@ import java.sql.Connection
 import com.lucidchart.relate.*
 import java.sql.SQLIntegrityConstraintViolationException
 import java.util.UUID
+import java.time.Instant
 
 class RelateUserRepository extends  UserRepository{
 
@@ -45,6 +46,15 @@ class RelateUserRepository extends  UserRepository{
     """.asSingleOption(UserEntity.fromRow)(conn)
 
     Right(entity.map(UserEntity.toDomain))
+  }
+
+  override def incrementTokenVersion(publicId: String, now: Instant, conn: Connection): Either[AppError, Unit] = {
+    sql"""
+      UPDATE identity_user
+      SET token_version = token_version + 1, updated_at = $now
+      WHERE public_id = ${UserEntity.uuidToBytes(UUID.fromString(publicId))}
+    """.executeUpdate()(conn)
+    Right(())
   }
 
   private def isEmailKey(e: SQLIntegrityConstraintViolationException): Boolean =
