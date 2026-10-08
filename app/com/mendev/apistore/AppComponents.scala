@@ -9,6 +9,7 @@ import play.api.http.HttpErrorHandler
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
 import _root_.router.Routes
+import play.api.mvc.EssentialFilter
 
 class AppComponents(context: Context)
   extends BuiltInComponentsFromContext(context)
@@ -23,4 +24,8 @@ class AppComponents(context: Context)
 
   // Arguments follow the order in conf/routes: error handler, then each controller once.
   lazy val router: Router = new Routes(httpErrorHandler, healthController, authController)
+
+  // No Play CSRF filter: this is a token-less JSON API. 
+  override def httpFilters: Seq[EssentialFilter] =
+    super.httpFilters.filterNot(_ == csrfFilter)
 }
