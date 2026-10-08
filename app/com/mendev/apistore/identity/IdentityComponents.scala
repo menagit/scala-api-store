@@ -1,6 +1,6 @@
 package com.mendev.apistore.identity
 
-import com.mendev.apistore.identity.application.{IdGenerator, PasswordHasher, SignIn, SignUp, TokenIssuer, UserRepository}
+import com.mendev.apistore.identity.application.{IdGenerator, PasswordHasher, RefreshAccessToken, RefreshTokenGenerator, SignIn, SignUp, TokenIssuer, TokenRepository, UserRepository}
 import com.mendev.apistore.identity.infrastructure.id.UuidV7Generator
 import com.mendev.apistore.identity.infrastructure.persistence.RelateUserRepository
 import com.mendev.apistore.identity.infrastructure.security.{Argon2PasswordHasher, JwtTokenService}
@@ -33,5 +33,12 @@ trait IdentityComponents {
   )(executionContext)
 
   lazy val authController: AuthController =
-    new AuthController(controllerComponents, signUp, signIn, rateLimitedAction)(executionContext)
+    new AuthController(controllerComponents, signUp, signIn, rateLimitedAction, refreshAccessToken)(executionContext)
+
+  lazy val refreshAccessToken: RefreshAccessToken = new RefreshAccessToken(
+    userRepository, tokenRepository, refreshTokenGenerator, tokenIssuer,
+    txRunner, clock, appConfig.jwt.refreshTokenTtl
+  )(executionContext)
+
+
 }
