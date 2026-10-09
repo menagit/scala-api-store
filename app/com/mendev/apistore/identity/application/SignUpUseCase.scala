@@ -8,11 +8,11 @@ import com.mendev.apistore.shared.security.Client
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
-class SignUp (idGenerator: IdGenerator,
-                        userRepo: UserRepository,
-                        clock: Clock,
-                        pwdHasher: PasswordHasher,
-                        runner: TxRunner
+class SignUpUseCase(idGenerator: IdGenerator,
+                    userRepo: UserRepository,
+                    clock: Clock,
+                    pwdHasher: PasswordHasher,
+                    runner: TxRunner
 )(implicit ec: ExecutionContext) {
 
 

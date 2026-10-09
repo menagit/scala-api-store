@@ -1,26 +1,26 @@
 package com.mendev.apistore.identity.infrastructure.web
 
-import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessToken, SignIn, SignInCommand, SignInResult, SignOut, SignUp, SignUpCommand}
+import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessTokenUseCase, SignInUseCase, SignInCommand, SignInResult, SignOutUseCase, SignUpUseCase, SignUpCommand}
 import com.mendev.apistore.shared.*
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.web.ErrorResponse
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import com.mendev.apistore.shared.actions.RateLimitedAction
 import scala.concurrent.{ExecutionContext, Future}
-import com.mendev.apistore.identity.application.{IssuedRefreshToken, SignIn, SignInCommand, SignUp, SignUpCommand}
+import com.mendev.apistore.identity.application.{IssuedRefreshToken, SignInUseCase, SignInCommand, SignUpUseCase, SignUpCommand}
 import play.api.mvc.{AbstractController, Action, ControllerComponents, Cookie}
-import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessToken, SignIn, SignInCommand, SignInResult, SignUp, SignUpCommand}
+import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessTokenUseCase, SignInUseCase, SignInCommand, SignInResult, SignUpUseCase, SignUpCommand}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Cookie, DiscardingCookie, Result}
 import play.api.libs.json.{Json, Reads}
 import scala.util.Try
 
 class AuthController (
-                                 cc: ControllerComponents,
-                                 signUpUseCase: SignUp,
-                                 signInUseCase: SignIn,
-                                 rateLimited: RateLimitedAction,
-                                 refreshUseCase: RefreshAccessToken,
-                                 signOutUseCase: SignOut,
+                       cc: ControllerComponents,
+                       signUpUseCase: SignUpUseCase,
+                       signInUseCase: SignInUseCase,
+                       rateLimited: RateLimitedAction,
+                       refreshUseCase: RefreshAccessTokenUseCase,
+                       signOutUseCase: SignOutUseCase,
                                )(implicit ec: ExecutionContext)
   extends AbstractController(cc)  {
 

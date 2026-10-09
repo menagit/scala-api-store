@@ -1,6 +1,6 @@
 package com.mendev.apistore.identity
 
-import com.mendev.apistore.identity.application.{IdGenerator, PasswordHasher, RefreshAccessToken, RefreshTokenGenerator, SignIn, SignUp, TokenIssuer, TokenRepository, UserRepository,SignOut}
+import com.mendev.apistore.identity.application.{IdGenerator, PasswordHasher, RefreshAccessTokenUseCase, RefreshTokenGenerator, SignInUseCase, SignUpUseCase, TokenIssuer, TokenRepository, UserRepository,SignOutUseCase}
 import com.mendev.apistore.identity.infrastructure.id.UuidV7Generator
 import com.mendev.apistore.identity.infrastructure.persistence.RelateUserRepository
 import com.mendev.apistore.identity.infrastructure.security.{Argon2PasswordHasher, JwtTokenService}
@@ -26,17 +26,17 @@ trait IdentityComponents {
   lazy val tokenIssuer: TokenIssuer         = jwtTokenService
   lazy val tokenVerifier: TokenVerifier     = jwtTokenService
 
-  lazy val signUp: SignUp = new SignUp(idGenerator, userRepository, clock, passwordHasher, txRunner)(executionContext)
-  lazy val signOut: SignOut = new SignOut(userRepository, tokenRepository, refreshTokenGenerator, txRunner, clock)
-  lazy val signIn: SignIn = new SignIn(
+  lazy val signUpUseCase: SignUpUseCase = new SignUpUseCase(idGenerator, userRepository, clock, passwordHasher, txRunner)(executionContext)
+  lazy val signOutUseCase: SignOutUseCase = new SignOutUseCase(userRepository, tokenRepository, refreshTokenGenerator, txRunner, clock)
+  lazy val signInUseCase: SignInUseCase = new SignInUseCase(
     userRepository, passwordHasher, tokenIssuer, refreshTokenGenerator, tokenRepository,
     txRunner, clock, appConfig.jwt.refreshTokenTtl
   )(executionContext)
 
   lazy val authController: AuthController =
-    new AuthController(controllerComponents, signUp, signIn, rateLimitedAction, refreshAccessToken,signOut)(executionContext)
+    new AuthController(controllerComponents, signUpUseCase, signInUseCase, rateLimitedAction, refreshAccessTokenUseCase,signOutUseCase)(executionContext)
 
-  lazy val refreshAccessToken: RefreshAccessToken = new RefreshAccessToken(
+  lazy val refreshAccessTokenUseCase: RefreshAccessTokenUseCase = new RefreshAccessTokenUseCase(
     userRepository, tokenRepository, refreshTokenGenerator, tokenIssuer,
     txRunner, clock, appConfig.jwt.refreshTokenTtl
   )(executionContext)

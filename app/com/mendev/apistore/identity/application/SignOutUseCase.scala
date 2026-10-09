@@ -7,7 +7,7 @@ import java.sql.Connection
 import java.time.Clock
 import scala.concurrent.Future
 
-class SignOut(
+class SignOutUseCase(
                userRepo: UserRepository,
                tokenRepo: TokenRepository,
                refreshGenerator: RefreshTokenGenerator,
