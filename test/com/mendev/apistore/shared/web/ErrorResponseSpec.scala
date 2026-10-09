@@ -21,21 +21,21 @@ class ErrorResponseSpec extends AnyWordSpec with Matchers {
 
   "ErrorResponse.body" should {
     "write code, message and an empty details list" in {
-      val error = ErrorResponse.body(AppError.NotFound("Product not found")).hcursor.downField("error")
+      val error = ErrorResponse.body(AppError.NotFound("Product not found")) \ "error"
 
-      error.downField("code").as[String] shouldBe Right("NOT_FOUND")
-      error.downField("message").as[String] shouldBe Right("Product not found")
-      error.downField("details").as[List[String]] shouldBe Right(Nil)
+      (error \ "code").as[String] shouldBe "NOT_FOUND"
+      (error \ "message").as[String] shouldBe "Product not found"
+      (error \ "details").as[List[String]] shouldBe Nil
     }
 
     "write the field list for a validation error" in {
       val fields = List(FieldError("email", "must be a valid email"))
-      val error = ErrorResponse.body(AppError.Validation("Invalid input", fields)).hcursor.downField("error")
-      val first = error.downField("details").downArray
+      val error = ErrorResponse.body(AppError.Validation("Invalid input", fields)) \ "error"
+      val first = (error \ "details")(0)
 
-      error.downField("code").as[String] shouldBe Right("VALIDATION_ERROR")
-      first.downField("field").as[String] shouldBe Right("email")
-      first.downField("message").as[String] shouldBe Right("must be a valid email")
+      (error \ "code").as[String] shouldBe "VALIDATION_ERROR"
+      (first \ "field").as[String] shouldBe "email"
+      (first \ "message").as[String] shouldBe "must be a valid email"
     }
   }
 
