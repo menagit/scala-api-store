@@ -11,6 +11,8 @@ import play.api.ContextBasedBuiltInComponents
 import com.mendev.apistore.identity.application.{RefreshTokenGenerator, TokenRepository}
 import com.mendev.apistore.identity.infrastructure.persistence.RelateTokenRepository
 import com.mendev.apistore.identity.infrastructure.security.SecureRandomRefreshTokenGenerator
+import com.mendev.apistore.identity.application.CleanupExpiredTokensUseCase
+import com.mendev.apistore.identity.infrastructure.jobs.TokenCleanupJob
 
 trait IdentityComponents {
   this: ContextBasedBuiltInComponents with SharedComponents =>   // Play basics + shared (allowed for every context)
@@ -32,6 +34,12 @@ trait IdentityComponents {
     userRepository, passwordHasher, tokenIssuer, refreshTokenGenerator, tokenRepository,
     txRunner, clock, appConfig.jwt.refreshTokenTtl
   )(executionContext)
+
+  lazy val cleanupExpiredTokensUseCase: CleanupExpiredTokensUseCase =
+    new CleanupExpiredTokensUseCase(tokenRepository, txRunner, clock)
+
+  lazy val tokenCleanupJob: TokenCleanupJob =
+    new TokenCleanupJob(cleanupExpiredTokensUseCase, actorSystem, applicationLifecycle)(executionContext)
 
   lazy val authController: AuthController =
     new AuthController(controllerComponents, signUpUseCase, signInUseCase, rateLimitedAction, refreshAccessTokenUseCase,signOutUseCase)(executionContext)
