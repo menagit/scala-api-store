@@ -15,7 +15,7 @@ API Store: an e-commerce backend with REST and GraphQL, built as a modular monol
 
 ## Stack
 
-Scala 2.13.18 with `-Xsource:3` · Play 3.0.11 on Pekko · JDK 17 · sbt 1.13.0 · MySQL 8.4 (Docker) · Relate 5.1.0 over JDBC/HikariCP (no ORM) · Flyway (13.x, Flyway 14 needs Java 21) · circe + play-circe · Sangria · Play compile-time DI (no Guice) · PureConfig · ScalaTest + scalatestplus-play + testcontainers-scala · sbt-scoverage · play-mailer + Twirl (Mailpit in dev) · Thumbnailator · Play cache (Caffeine) · Bucket4j · Argon2id (password4j) · jwt-scala · play-swagger.
+Scala 2.13.18 with `-Xsource:3` · Play 3.0.11 on Pekko · JDK 17 · sbt 1.13.0 · MySQL 8.4 (Docker) · Relate 5.1.0 over JDBC/HikariCP (no ORM) · Flyway (13.x, Flyway 14 needs Java 21) · play-json · Sangria · Play compile-time DI (no Guice) · PureConfig · ScalaTest + scalatestplus-play + testcontainers-scala · sbt-scoverage · play-mailer + Twirl (Mailpit in dev) · Thumbnailator · Play cache (Caffeine) · Bucket4j · Argon2id (password4j) · jwt-scala · play-swagger.
 
 A library is added to `build.sbt` only by the task that first needs it.
 
