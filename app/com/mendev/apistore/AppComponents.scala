@@ -9,13 +9,17 @@ import play.api.http.HttpErrorHandler
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
 import _root_.router.Routes
+import com.mendev.apistore.notifications.NotificationsComponents
 import play.api.mvc.EssentialFilter
+import com.mendev.apistore.notifications.application.EmailMessage
 
 class AppComponents(context: Context)
   extends BuiltInComponentsFromContext(context)
     with HttpFiltersComponents
     with SharedComponents
-    with IdentityComponents {
+    with IdentityComponents
+    with NotificationsComponents
+ {
 
   // Run the migrations now, before the app takes requests (was asEagerSingleton).
   flywayMigrator

@@ -58,7 +58,7 @@ test/com/mendev/apistore/   mirrors app/ (shared/db/TestDatabase is the shared t
 docs/              ADRs, C4 diagrams
 ```
 
-All code is under the package prefix `com.mendev.apistore` (folder `app/com/mendev/apistore/`, tests mirror it under `test/`). Package names in this file are written without the prefix, for example `shared.config`. So far code exists only in `shared/` and `identity/`; add folders as each task needs them.
+All code is under the package prefix `com.mendev.apistore` (folder `app/com/mendev/apistore/`, tests mirror it under `test/`). Package names in this file are written without the prefix, for example `shared.config`. So far code exists only in `shared/`, `identity/` and `notifications/`; add folders as each task needs them.
 
 ## Architecture rules
 
