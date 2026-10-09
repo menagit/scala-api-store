@@ -5,10 +5,9 @@ import com.mendev.apistore.identity.domain.User
 import com.mendev.apistore.shared.config.JwtConfig
 import com.mendev.apistore.shared.error.AppError
 import com.mendev.apistore.shared.security.{Actor, Client, Manager, Role, TokenClaims, TokenVerifier}
-import io.circe.Json
-import io.circe.parser.parse
-import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim, JwtOptions}
-
+import pdi.jwt.{JwtAlgorithm, JwtClaim, JwtJson, JwtOptions}
+import play.api.libs.json.Json
+import scala.util.Try
 import java.time.Clock
 
 class JwtTokenService (config: JwtConfig, clock: Clock) extends TokenIssuer with TokenVerifier {
@@ -20,21 +19,21 @@ class JwtTokenService (config: JwtConfig, clock: Clock) extends TokenIssuer with
     val issuedAt   = clock.instant().getEpochSecond
     val ttlSeconds = config.accessTokenTtl.toSeconds
     val claim = JwtClaim(
-      content = Json
-        .obj(
-          RoleClaim    -> Json.fromString(roleToText(user.role)),
-          VersionClaim -> Json.fromInt(user.tokenVersion)
+      content = Json.stringify(
+        Json.obj(
+          RoleClaim    -> roleToText(user.role),
+          VersionClaim -> user.tokenVersion
         )
-        .noSpaces,
+      ),
       subject = Some(user.publicId),
       issuedAt = Some(issuedAt),
       expiration = Some(issuedAt + ttlSeconds)
     )
-    IssuedToken(JwtCirce.encode(claim, key, Algorithm), ttlSeconds)
+    IssuedToken(JwtJson.encode(claim, key, Algorithm), ttlSeconds)
   }
 
   override def verify(token: String): Either[AppError, TokenClaims] =
-    JwtCirce
+    JwtJson
       .decode(token, key, Seq(Algorithm), JwtOptions(expiration = false))
       .toOption
       .filter(isNotExpired)
@@ -47,9 +46,9 @@ class JwtTokenService (config: JwtConfig, clock: Clock) extends TokenIssuer with
   private def toTokenClaims(claim: JwtClaim): Option[TokenClaims] =
     for {
       publicId <- claim.subject
-      cursor   <- parse(claim.content).toOption.map(_.hcursor)
-      role     <- cursor.get[String](RoleClaim).toOption.flatMap(textToRole)
-      version  <- cursor.get[Int](VersionClaim).toOption
+      json     <- Try(Json.parse(claim.content)).toOption
+      role     <- (json \ RoleClaim).asOpt[String].flatMap(textToRole)
+      version  <- (json \ VersionClaim).asOpt[Int]
     } yield TokenClaims(Actor(publicId, role), version)
 }
 

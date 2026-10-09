@@ -4,9 +4,6 @@ import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAcce
 import com.mendev.apistore.shared.*
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.web.ErrorResponse
-import io.circe.Json
-import play.api.http.MimeTypes
-import play.api.libs.circe.Circe
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import com.mendev.apistore.shared.actions.RateLimitedAction
 import scala.concurrent.{ExecutionContext, Future}
@@ -14,6 +11,8 @@ import com.mendev.apistore.identity.application.{IssuedRefreshToken, SignIn, Sig
 import play.api.mvc.{AbstractController, Action, ControllerComponents, Cookie}
 import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessToken, SignIn, SignInCommand, SignInResult, SignUp, SignUpCommand}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Cookie, DiscardingCookie, Result}
+import play.api.libs.json.{Json, Reads}
+import scala.util.Try
 
 class AuthController (
                                  cc: ControllerComponents,
@@ -23,10 +22,10 @@ class AuthController (
                                  refreshUseCase: RefreshAccessToken,
                                  signOutUseCase: SignOut,
                                )(implicit ec: ExecutionContext)
-  extends AbstractController(cc) with Circe {
+  extends AbstractController(cc)  {
 
   //AbstractController(cc) this calls the parent constructor, like super(cc) in Java. It gives us Action, Ok, BadRequest, and the rest
-  //Circe == Jackson
+  //just play json library -> replace circe
   /**
    * SignUp Endpoint
    * @return
@@ -35,8 +34,8 @@ class AuthController (
     //just play json library -> replace circe
   def register: Action[String] = Action.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, SignUpCommand] =
-      io.circe.parser.decode[SignUpRequest](request.body).left.map(_ => invalidBody).flatMap(toCommand)
-
+      //io.circe.parser.decode[SignUpRequest](request.body).left.map(_ => invalidBody).flatMap(toCommand)
+      readBody[SignUpRequest](request.body).flatMap(toCommand)
     parsed match {
       //The error case
       case Left(error) =>
@@ -45,7 +44,8 @@ class AuthController (
       case Right(command) =>
         signUpUseCase.execute(command).map {
           case Right(response) =>
-            Created(Json.obj("publicId" -> Json.fromString(response.publicId)).noSpaces).as(MimeTypes.JSON)
+            //Created(Json.obj("publicId" -> Json.fromString(response.publicId)).noSpaces).as(MimeTypes.JSON)
+            Created(Json.obj("publicId" -> response.publicId))
           case Left(error) =>
             ErrorResponse.result(error)
         }
@@ -57,29 +57,16 @@ class AuthController (
    * @return
    */
   def login: Action[String] = (Action andThen rateLimited("sign-in")).async(parse.tolerantText) { request =>
-  //def login: Action[String] = Action.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, SignInCommand] =
-      io.circe.parser.decode[SignInRequest](request.body).left.map(_ => invalidBody).flatMap(toSignInCommand)
+      readBody[SignInRequest](request.body).flatMap(toSignInCommand)
 
     parsed match {
       case Left(error) =>
         Future.successful(ErrorResponse.result(error))
       case Right(command) =>
         signInUseCase.execute(command).map {
-          case Right(result) =>
-            tokenResponse(result)
-            val access = result.accessToken
-            Ok(
-              Json.obj(
-                "access_token" -> Json.fromString(access.value),
-                "token_type"   -> Json.fromString("Bearer"),
-                "expires_in"   -> Json.fromLong(access.expiresInSeconds)
-              ).noSpaces
-            ).as(MimeTypes.JSON)
-              .withHeaders("Cache-Control" -> "no-store", "Pragma" -> "no-cache")
-              .withCookies(refreshCookie(result.refreshToken))
-          case Left(error) =>
-            ErrorResponse.result(error)
+          case Right(result) => tokenResponse(result)
+          case Left(error)   => ErrorResponse.result(error)
         }
     }
   }
@@ -120,6 +107,8 @@ class AuthController (
   private val invalidBody: AppError =
     AppError.Validation("Invalid request", List(FieldError("body", "is not valid for this endpoint")))
 
+  private def readBody[A: Reads](body: String): Either[AppError, A] =
+    Try(Json.parse(body)).toOption.flatMap(_.asOpt[A]).toRight(invalidBody)
   /**
    * Helper method to create the signUp command
    * @param req
@@ -166,11 +155,11 @@ class AuthController (
     val access = result.accessToken
     Ok(
       Json.obj(
-        "access_token" -> Json.fromString(access.value),
-        "token_type"   -> Json.fromString("Bearer"),
-        "expires_in"   -> Json.fromLong(access.expiresInSeconds)
-      ).noSpaces
-    ).as(MimeTypes.JSON)
+        "access_token" -> access.value,
+        "token_type"   -> "Bearer",
+        "expires_in"   -> access.expiresInSeconds
+      )
+    )
       .withHeaders("Cache-Control" -> "no-store", "Pragma" -> "no-cache")
       .withCookies(refreshCookie(result.refreshToken))
   }
