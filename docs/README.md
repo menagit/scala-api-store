@@ -11,6 +11,7 @@ Each ADR records one significant decision, why it was made, and what it costs. T
 | [0001](adr/0001-architecture-style-and-technology-stack.md) | Architecture style and technology stack | Accepted |
 | [0002](adr/0002-product-pricing-embedded-discount-and-price-history.md) | Product pricing: embedded discount and price history | Accepted |
 | [0003](adr/0003-compile-time-dependency-injection.md) | Compile-time dependency injection | Accepted |
+| [0004](adr/0004-json-library-play-json.md) | JSON library: play-json | Accepted |
 
 ### Planned ADRs
 
