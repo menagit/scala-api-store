@@ -49,4 +49,10 @@ class RelateTokenRepository extends TokenRepository {
     """.executeUpdate()(conn)
     ()
   }
+
+  override def deleteExpired(cutoff: Instant, limit: Int, conn: Connection): Int = {
+    sql"""
+      DELETE FROM identity_token WHERE EXPIRES_AT < $cutoff    LIMIT $limit
+    """.executeUpdate()(conn)
+  }
 }

@@ -19,6 +19,8 @@ class AppComponents(context: Context)
 
   // Run the migrations now, before the app takes requests (was asEagerSingleton).
   flywayMigrator
+  //Starts the cleanUp (hourly)
+  tokenCleanupJob
 
   override lazy val httpErrorHandler: HttpErrorHandler = new JsonErrorHandler
 

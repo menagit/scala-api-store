@@ -12,4 +12,6 @@ trait TokenRepository {
   def revoke(hash: Array[Byte], at: Instant, conn: Connection): Boolean
 
   def revokeAllForUser(userPublicId: String, at: Instant, conn: Connection): Unit
+
+  def deleteExpired(cutoff: Instant, limit: Int, conn: Connection): Int
 }
