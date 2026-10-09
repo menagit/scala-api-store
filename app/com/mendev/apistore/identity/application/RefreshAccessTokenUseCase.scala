@@ -9,7 +9,7 @@ import java.time.{Clock, Instant}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class RefreshAccessToken(
+class RefreshAccessTokenUseCase(
                           userRepo: UserRepository,
                           tokenRepo: TokenRepository,
                           refreshGenerator: RefreshTokenGenerator,

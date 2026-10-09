@@ -8,7 +8,7 @@ import java.time.Clock
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class SignIn(
+class SignInUseCase(
               userRepo: UserRepository,
               pwdHasher: PasswordHasher,
               tokenIssuer: TokenIssuer,
