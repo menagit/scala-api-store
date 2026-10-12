@@ -15,6 +15,8 @@ scalacOptions ++= Seq(
   "-Wunused"
 )
 
+//Test / parallelExecution := false
+
 libraryDependencies ++= Seq(
   jdbc,
   "com.lucidchart" %% "relate" % "5.1.0",
