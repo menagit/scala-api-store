@@ -25,6 +25,8 @@ class AppComponents(context: Context)
   flywayMigrator
   //Starts the cleanUp (hourly)
   tokenCleanupJob
+   //Starts the outbox poller (every 30 seconds)
+   outboxPollerJob
 
   override lazy val httpErrorHandler: HttpErrorHandler = new JsonErrorHandler
 
