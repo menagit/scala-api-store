@@ -7,3 +7,4 @@ POST  /auth/sign-up    com.mendev.apistore.identity.infrastructure.web.AuthContr
 POST  /auth/sign-in    com.mendev.apistore.identity.infrastructure.web.AuthController.login
 POST  /auth/refresh    com.mendev.apistore.identity.infrastructure.web.AuthController.refresh
 POST  /auth/sign-out   com.mendev.apistore.identity.infrastructure.web.AuthController.signOut
+GET   /me              com.mendev.apistore.identity.infrastructure.web.MeController.me
