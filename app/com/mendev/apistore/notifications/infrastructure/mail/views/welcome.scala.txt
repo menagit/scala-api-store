@@ -1,0 +1,4 @@
+@(name: String, link: String)
+Welcome, @name
+
+Confirm your email: @link
