@@ -68,7 +68,7 @@ All code is under the package prefix `com.mendev.apistore` (folder `app/com/mend
 - `shared` contains no domain concepts and depends on no context, except the caller identity (`Actor`, `Role`, `TokenClaims`). `shared/security` also holds the cross-cutting security tools (`TokenVerifier`, `RateLimiter`).
 - No Play types in the application layer (use cases and ports). `TxRunner` uses only `java.sql.Connection`, `Future` and `Either`. Play's `Database` appears only in `PlayDbTxRunner` and `SharedComponents`.
 - Use cases are classes in `application` named `<Verb><Thing>UseCase` (`SignInUseCase`), with one public `execute`. In the components trait the instance is `signInUseCase`.
-- Infrastructure has no loose classes at its root: each adapter goes in a subfolder named for what it does (`web`, `persistence`, `security`, `id`).
+- Infrastructure has no loose classes at its root: each adapter goes in a subfolder named for what it does (`web`, `persistence`, `security`, `id`, `jobs`, `mail`). Email templates (Twirl) live in `mail/views`, not in a top-level `views` folder.
 - Controllers and resolvers are thin: parse, call a use case, map the result. No business rules in them.
 - Authorization in two layers: action builders at the edge (401/403), and an explicit `Actor` in every use case that acts for a user (404 for records that aren't yours).
 - Events go through a transactional outbox (`shared_event`): written in the same transaction as the change, delivered by a poller, at least once. Handlers must be idempotent.
@@ -109,7 +109,7 @@ All code is under the package prefix `com.mendev.apistore` (folder `app/com/mend
 - Table names are lowercase in SQL. MySQL on Linux is case-sensitive for table names.
 - Keys: `id BIGINT UNSIGNED AUTO_INCREMENT`. Users and orders also have `public_id BINARY(16)` (UUID v7 from the app). Only `public_id` goes in URLs.
 - Money `DECIMAL(12,2)`, percentages `DECIMAL(5,2)`. Time `DATETIME(6)` in UTC.
-- `created_at` and `updated_at` on every table, set by the app. Append-only tables (history, `shared_event`) have only `created_at` (`shared_event` also has `processed_at`).
+- `created_at` and `updated_at` on every table, set by the app. Append-only tables (history, `shared_event`) have only `created_at` (`shared_event` also has `processed_at`  and `failed_at`: an event that cannot be handled is set aside with `failed_at`, so it never blocks the queue).
 - Statuses: `VARCHAR(32)` with a `CHECK`, no MySQL `ENUM`.
 - `NOT NULL` by default. `VARCHAR` always has an explicit length.
 - Constraint names: `uk_`, `ix_`, `ck_` + `<table>_<cols>`.
