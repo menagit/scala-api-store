@@ -6,6 +6,11 @@ import org.testcontainers.utility.DockerImageName
 
 import java.sql.{DriverManager, ResultSet}
 
+import play.api.db.Databases
+
+import java.util.concurrent.Executors
+import scala.concurrent.ExecutionContext
+
 object TestDatabase {
 
   private lazy val mysql: MySQLContainer = {
@@ -26,6 +31,30 @@ object TestDatabase {
     )
     new FlywayMigrator(cfg)
     cfg
+  }
+
+  // The real PlayDbTxRunner, on a small pool, shared by the integration tests.
+  // Daemon threads, so the pool never keeps the JVM alive.
+  lazy val txRunner: TxRunner = {
+    val db = Databases(
+      "com.mysql.cj.jdbc.Driver",
+      //s"jdbc:mysql://${config.host}:${config.port}/${config.name}",
+      s"jdbc:mysql://${config.host}:${config.port}/${config.name}?connectionTimeZone=UTC",
+      "test",
+      Map("username" -> config.user, "password" -> config.password.value)
+    )
+    val ec = ExecutionContext.fromExecutorService(
+      Executors.newFixedThreadPool(2, runnable => {
+        val thread = new Thread(runnable)
+        thread.setDaemon(true)
+        thread
+      })
+    )
+    sys.addShutdownHook {
+      db.shutdown()
+      ec.shutdown()
+    }
+    new PlayDbTxRunner(db, ec)
   }
 
   def query[A](sql: String)(read: ResultSet => A): List[A] = {
