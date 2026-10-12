@@ -31,7 +31,7 @@ class AppComponents(context: Context)
   override lazy val httpErrorHandler: HttpErrorHandler = new JsonErrorHandler
 
   // Arguments follow the order in conf/routes: error handler, then each controller once.
-  lazy val router: Router = new Routes(httpErrorHandler, healthController, authController)
+  lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController)
 
   // No Play CSRF filter: this is a token-less JSON API. 
   override def httpFilters: Seq[EssentialFilter] =
