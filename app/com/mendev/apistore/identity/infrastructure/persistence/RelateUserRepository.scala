@@ -3,8 +3,11 @@ package com.mendev.apistore.identity.infrastructure.persistence
 import com.mendev.apistore.identity.application.UserRepository
 import com.mendev.apistore.identity.domain.User
 import com.mendev.apistore.shared.error.AppError
+
 import java.sql.Connection
 import com.lucidchart.relate.*
+import shapeless.ops.zipper
+
 import java.sql.SQLIntegrityConstraintViolationException
 import java.util.UUID
 import java.time.Instant
@@ -60,4 +63,10 @@ class RelateUserRepository extends  UserRepository{
   private def isEmailKey(e: SQLIntegrityConstraintViolationException): Boolean =
     Option(e.getMessage).exists(_.contains("uk_identity_user_email"))
 
+  override def updatePasswordHash(publicId: String, newHash: String, now: Instant, conn: Connection): Either[AppError, Unit] = {
+    sql""" UPDATE identity_user SET password_hash = $newHash, updated_at = $now
+         WHERE public_id= ${UserEntity.uuidToBytes(UUID.fromString(publicId))}"""
+      .executeUpdate()(conn)
+    Right(())
+  }
 }
