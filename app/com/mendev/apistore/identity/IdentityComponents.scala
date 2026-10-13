@@ -1,6 +1,6 @@
 package com.mendev.apistore.identity
 
-import com.mendev.apistore.identity.application.{CheckTokenVersionUseCase, IdGenerator, PasswordHasher, RefreshAccessTokenUseCase, RefreshTokenGenerator, SignInUseCase, SignOutUseCase, SignUpUseCase, TokenIssuer, TokenRepository, UserRepository}
+import com.mendev.apistore.identity.application.{ChangePasswordUseCase, CheckTokenVersionUseCase, CleanupExpiredTokensUseCase, IdGenerator, PasswordHasher, RefreshAccessTokenUseCase, RefreshTokenGenerator, SignInUseCase, SignOutUseCase, SignUpUseCase, TokenIssuer, TokenRepository, UserRepository}
 import com.mendev.apistore.identity.infrastructure.id.UuidV7Generator
 import com.mendev.apistore.identity.infrastructure.persistence.RelateUserRepository
 import com.mendev.apistore.identity.infrastructure.security.{Argon2PasswordHasher, JwtTokenService}
@@ -10,7 +10,6 @@ import com.mendev.apistore.shared.security.{TokenVerifier, TokenVersionChecker}
 import play.api.ContextBasedBuiltInComponents
 import com.mendev.apistore.identity.infrastructure.persistence.RelateTokenRepository
 import com.mendev.apistore.identity.infrastructure.security.SecureRandomRefreshTokenGenerator
-import com.mendev.apistore.identity.application.CleanupExpiredTokensUseCase
 import com.mendev.apistore.identity.infrastructure.jobs.TokenCleanupJob
 import com.mendev.apistore.shared.actions.AuthenticatedAction
 trait IdentityComponents {
@@ -39,6 +38,9 @@ trait IdentityComponents {
     txRunner, clock, appConfig.jwt.refreshTokenTtl
   )(executionContext)
 
+  lazy val changePasswordUseCase: ChangePasswordUseCase =
+    new ChangePasswordUseCase(userRepository, tokenRepository, txRunner, clock, passwordHasher)(executionContext)
+
   lazy val cleanupExpiredTokensUseCase: CleanupExpiredTokensUseCase =
     new CleanupExpiredTokensUseCase(tokenRepository, txRunner, clock)
 
@@ -46,7 +48,7 @@ trait IdentityComponents {
     new TokenCleanupJob(cleanupExpiredTokensUseCase, actorSystem, applicationLifecycle)(executionContext)
 
   lazy val authController: AuthController =
-    new AuthController(controllerComponents, signUpUseCase, signInUseCase, rateLimitedAction, refreshAccessTokenUseCase,signOutUseCase)(executionContext)
+    new AuthController(controllerComponents, signUpUseCase, signInUseCase, rateLimitedAction, refreshAccessTokenUseCase,signOutUseCase,authenticatedAction, changePasswordUseCase)(executionContext)
 
   lazy val meController: MeController =
     new MeController(controllerComponents, authenticatedAction )

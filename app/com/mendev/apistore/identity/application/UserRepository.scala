@@ -13,4 +13,7 @@ trait UserRepository {
 
   // Atomic +1 in SQL. Old access tokens carry the old version, so they stop matching.
   def incrementTokenVersion(publicId: String, now: Instant, conn: Connection): Either[AppError, Unit]
+
+  //Update hash when changing pwd
+  def updatePasswordHash(publicId: String, newHash: String, now: Instant, conn: Connection): Either[AppError, Unit]
 }

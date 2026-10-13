@@ -1,11 +1,12 @@
 package com.mendev.apistore.identity.infrastructure.web
 
-import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessTokenUseCase, SignInUseCase, SignInCommand, SignInResult, SignOutUseCase, SignUpUseCase, SignUpCommand}
+import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessTokenUseCase, SignInUseCase, SignInCommand, SignInResult, SignOutUseCase, SignUpUseCase, SignUpCommand,ChangePasswordCommand, ChangePasswordUseCase}
 import com.mendev.apistore.shared.*
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.web.ErrorResponse
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import com.mendev.apistore.shared.actions.RateLimitedAction
+import com.mendev.apistore.shared.actions.AuthenticatedAction
 import scala.concurrent.{ExecutionContext, Future}
 import com.mendev.apistore.identity.application.{IssuedRefreshToken, SignInUseCase, SignInCommand, SignUpUseCase, SignUpCommand}
 import play.api.mvc.{AbstractController, Action, ControllerComponents, Cookie}
@@ -21,6 +22,8 @@ class AuthController (
                        rateLimited: RateLimitedAction,
                        refreshUseCase: RefreshAccessTokenUseCase,
                        signOutUseCase: SignOutUseCase,
+                       authenticated: AuthenticatedAction,
+                       changePasswordUseCase: ChangePasswordUseCase
                                )(implicit ec: ExecutionContext)
   extends AbstractController(cc)  {
 
@@ -104,6 +107,25 @@ class AuthController (
     }
   }
 
+  /**
+   * Change-password Endpoint: needs a valid access token.
+   * Success is 204 and the refresh cookie is cleared.
+   */
+  def changePassword: Action[String] = authenticated.async(parse.tolerantText) { request =>
+    val parsed: Either[AppError, ChangePasswordCommand] =
+      readBody[ChangePasswordRequest](request.body).flatMap(toChangePasswordCommand)
+
+    parsed match {
+      case Left(error) =>
+        Future.successful(ErrorResponse.result(error))
+      case Right(command) =>
+        changePasswordUseCase.execute(command, request.actor).map {
+          case Right(_)    => NoContent.discardingCookies(discardRefreshCookie)
+          case Left(error) => ErrorResponse.result(error)
+        }
+    }
+  }
+
   private val invalidBody: AppError =
     AppError.Validation("Invalid request", List(FieldError("body", "is not valid for this endpoint")))
 
@@ -140,6 +162,18 @@ class AuthController (
           .collect { case (name, None) => FieldError(name, "is required") }
         Left(AppError.Validation("Invalid request", missing))
     }
+
+  private def toChangePasswordCommand(req: ChangePasswordRequest): Either[AppError, ChangePasswordCommand] =
+    (req.currentPassword, req.newPassword) match {
+      case (Some(current), Some(next)) =>
+        Right(ChangePasswordCommand(current, next))
+      case _ =>
+        val missing = List("currentPassword" -> req.currentPassword, "newPassword" -> req.newPassword)
+          .collect { case (name, None) => FieldError(name, "is required") }
+        Left(AppError.Validation("Invalid request", missing))
+    }
+
+
   private def refreshCookie(token: IssuedRefreshToken): Cookie =
     Cookie(
       name = AuthController.RefreshCookieName,
