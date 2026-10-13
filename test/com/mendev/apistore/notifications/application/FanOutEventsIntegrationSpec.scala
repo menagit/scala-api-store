@@ -16,7 +16,7 @@ class FanOutEventsIntegrationSpec extends AnyWordSpec with Matchers with BeforeA
   private val clock = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC)
 
   private val oneDelivery =
-    NewDelivery(1L, "ana@example.test", "welcome", Map("name" -> "Ana", "link" -> "http://example.test"))
+    NewDelivery("0192f1c8-7b3e-7a10-8c44-5d2f6e9a1b07", "ana@example.test", "welcome", Map("name" -> "Ana", "link" -> "http://example.test"))
 
   // The event type decides what the fake handler does.
   private val dispatcher = new EventDispatcher {

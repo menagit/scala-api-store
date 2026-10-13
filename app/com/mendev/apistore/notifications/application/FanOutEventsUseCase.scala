@@ -54,7 +54,7 @@ class FanOutEventsUseCase(
     }
 
   private def hasDuplicates(deliveries: List[NewDelivery]): Boolean =
-    deliveries.map(d => (d.recipientUserId, d.template)).distinct.size != deliveries.size
+    deliveries.map(d => (d.recipientPublicId, d.template)).distinct.size != deliveries.size
 }
 
 object FanOutEventsUseCase {
