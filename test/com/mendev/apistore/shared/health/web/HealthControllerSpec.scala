@@ -35,7 +35,8 @@ class HealthControllerSpec extends PlaySpec with OneAppPerSuiteWithComponents {
         "app.mail.password"     -> "",
         "app.mail.from"         -> "test@apistore.local",
         "app.jwt.secret"        -> "test-secret-test-secret-test-secret-1234",
-        "app.jwt.access-token-ttl" -> "2 minutes"
+        "app.jwt.access-token-ttl" -> "2 minutes",
+        "app.encryption.key"       -> "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
       )
     )
 

@@ -3,6 +3,7 @@ package com.mendev.apistore.shared.config
 import pureconfig.ConfigSource
 import pureconfig.error.ConfigReaderFailures
 import pureconfig.generic.auto.*
+import com.mendev.apistore.shared.config.EncryptionConfig
 
 final case class DatabaseConfig(
                                  host: String,
@@ -24,7 +25,8 @@ final case class MailConfig(
 final case class AppConfig(
                             database: DatabaseConfig,
                             mail: MailConfig,
-                            jwt: JwtConfig
+                            jwt: JwtConfig,
+                            encryption: EncryptionConfig
                           )
 
 object AppConfig {
