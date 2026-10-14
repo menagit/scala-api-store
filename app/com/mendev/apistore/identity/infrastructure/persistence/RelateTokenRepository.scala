@@ -39,12 +39,12 @@ class RelateTokenRepository extends TokenRepository {
       WHERE token_hash = $hash AND revoked_at IS NULL
     """.executeUpdate()(conn) == 1
 
-  override def revokeAllForUser(userPublicId: String, at: Instant, conn: Connection): Unit = {
-    val refresh = TokenEntity.typeToText(TokenType.Refresh)
+  override def revokeAllForUser(userPublicId: String, tokenType: TokenType, at: Instant, conn: Connection): Unit = {
+    val kind = TokenEntity.typeToText(tokenType)
     val owner   = UserEntity.uuidToBytes(UUID.fromString(userPublicId))
     sql"""
       UPDATE identity_token SET revoked_at = $at, updated_at = $at
-      WHERE type = $refresh AND revoked_at IS NULL
+      WHERE type = $kind AND revoked_at IS NULL
         AND user_id = (SELECT id FROM identity_user WHERE public_id = $owner)
     """.executeUpdate()(conn)
     ()

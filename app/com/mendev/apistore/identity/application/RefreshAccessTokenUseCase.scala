@@ -75,7 +75,7 @@ class RefreshAccessTokenUseCase(
   }
 
   private def reuse(token: StoredToken, now: Instant, conn: Connection): Either[AppError, Outcome] = {
-    tokenRepo.revokeAllForUser(token.userPublicId, now, conn)
+    tokenRepo.revokeAllForUser(token.userPublicId,TokenType.Refresh, now, conn)
     Right(Reuse)
   }
 }
