@@ -1,6 +1,6 @@
 package com.mendev.apistore.identity
 
-import com.mendev.apistore.identity.application.{ChangePasswordUseCase, CheckTokenVersionUseCase, CleanupExpiredTokensUseCase, IdGenerator, PasswordHasher, RefreshAccessTokenUseCase, RefreshTokenGenerator, SignInUseCase, SignOutUseCase, SignUpUseCase, TokenIssuer, TokenRepository, UserRepository}
+import com.mendev.apistore.identity.application.{ChangePasswordUseCase, ForgotPasswordUseCase,CheckTokenVersionUseCase, CleanupExpiredTokensUseCase, IdGenerator, PasswordHasher, RefreshAccessTokenUseCase, RefreshTokenGenerator, SignInUseCase, SignOutUseCase, SignUpUseCase, TokenIssuer, TokenRepository, UserRepository}
 import com.mendev.apistore.identity.infrastructure.id.UuidV7Generator
 import com.mendev.apistore.identity.infrastructure.persistence.RelateUserRepository
 import com.mendev.apistore.identity.infrastructure.security.{Argon2PasswordHasher, JwtTokenService}
@@ -41,6 +41,9 @@ trait IdentityComponents {
   lazy val changePasswordUseCase: ChangePasswordUseCase =
     new ChangePasswordUseCase(userRepository, tokenRepository, txRunner, clock, passwordHasher,eventPublisher)(executionContext)
 
+  lazy val forgotPasswordUseCase: ForgotPasswordUseCase =
+    new ForgotPasswordUseCase(userRepository, tokenRepository, refreshTokenGenerator, tokenCipher, eventPublisher, txRunner, clock)
+
   lazy val cleanupExpiredTokensUseCase: CleanupExpiredTokensUseCase =
     new CleanupExpiredTokensUseCase(tokenRepository, txRunner, clock)
 
@@ -48,7 +51,7 @@ trait IdentityComponents {
     new TokenCleanupJob(cleanupExpiredTokensUseCase, actorSystem, applicationLifecycle)(executionContext)
 
   lazy val authController: AuthController =
-    new AuthController(controllerComponents, signUpUseCase, signInUseCase, rateLimitedAction, refreshAccessTokenUseCase,signOutUseCase,authenticatedAction, changePasswordUseCase)(executionContext)
+    new AuthController(controllerComponents, signUpUseCase, signInUseCase, rateLimitedAction, refreshAccessTokenUseCase,signOutUseCase,authenticatedAction, changePasswordUseCase,forgotPasswordUseCase)(executionContext)
 
   lazy val meController: MeController =
     new MeController(controllerComponents, authenticatedAction )

@@ -14,6 +14,7 @@ final case class DeliveryEntity(
    recipientEmail: String,
    template: String,
    data: String, // JSON text
+   secret: Option[String],
    status: String,
    attempts: Int,
    nextAttemptAt: Instant,
@@ -35,6 +36,7 @@ object DeliveryEntity {
       recipientEmail = delivery.recipientEmail,
       template = delivery.template,
       data = Json.stringify(Json.toJson(delivery.data)),
+      secret = delivery.secret,
       status = DeliveryStatus.Pending.value,
       attempts = 0,
       nextAttemptAt = at, // due at once
@@ -50,6 +52,7 @@ object DeliveryEntity {
       recipientEmail = entity.recipientEmail,
       template = entity.template,
       data = parseData(entity),
+      secret = entity.secret,
       attempts = entity.attempts
     )
 
@@ -61,6 +64,7 @@ object DeliveryEntity {
       recipientEmail = row.string("recipient_email"),
       template = row.string("template"),
       data = row.string("data"),
+      secret = row.stringOption("secret"),
       status = row.string("status"),
       attempts = row.int("attempts"),
       nextAttemptAt = row.instant("next_attempt_at"),

@@ -44,7 +44,7 @@ class SendDeliveriesUseCase(
     }
 
   private def sendOne(delivery: Delivery): Future[Outcome] =
-    Try(renderer.render(delivery.template, delivery.recipientEmail, delivery.data)).toEither match {
+    Try(renderer.render(delivery.template, delivery.recipientEmail, delivery.data,delivery.secret)).toEither match {
       // A bad template or data will not fix itself, so no retry.
       case Left(_)         => Future.successful(GaveUp(delivery.attempts + 1))
       case Right(Left(_))  => Future.successful(GaveUp(delivery.attempts + 1))

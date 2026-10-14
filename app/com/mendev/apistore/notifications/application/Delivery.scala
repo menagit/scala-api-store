@@ -8,6 +8,7 @@ final case class Delivery(
     recipientEmail: String,
     template: String,
     data: Map[String, String],
+    secret: Option[String], // encrypted
     attempts: Int
 ) {
   override def toString: String = s"Delivery($id, $template, attempts=$attempts)"

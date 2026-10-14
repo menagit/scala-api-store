@@ -9,16 +9,20 @@ import scala.concurrent.duration.*
 class AppConfigSpec extends AnyWordSpec with Matchers {
 
   private val mail =
-    """mail { host = "localhost", port = 1025, user = "", password = "", from = "no-reply@apistore.local" }"""
+    """mail { host = "localhost", port = 1025, user = "", password = "", from = "no-reply@apistore.local", link-base-url = "http://localhost:3000" }"""
 
   private val jwt =
     """jwt { secret = "test-secret-test-secret-test-secret-1234", access-token-ttl = "2 minutes", refresh-token-ttl = "30 days" }"""
+
+  private val encryption =
+    """encryption { key = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=" }"""
 
   private val valid =
     s"""app {
        |  database { host = "localhost", port = 3306, name = "api_store", user = "app", password = "db-secret" }
        |  $mail
        |  $jwt
+       |  $encryption
        |}""".stripMargin
 
   private val broken =
@@ -33,6 +37,7 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
        |  database { host = "localhost", port = 3306, name = "api_store", user = "app", password = "db-secret", pool-size = 25 }
        |  $mail
        |  $jwt
+       |  $encryption
        |}""".stripMargin
 
   private val withShortSecret =
@@ -40,6 +45,22 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
        |  database { host = "localhost", port = 3306, name = "api_store", user = "app", password = "db-secret" }
        |  $mail
        |  jwt { secret = "too-short", access-token-ttl = "2 minutes" , refresh-token-ttl = "30 days"}
+       |}""".stripMargin
+
+  private val withShortKey =
+    s"""app {
+       |  database { host = "localhost", port = 3306, name = "api_store", user = "app", password = "db-secret" }
+       |  $mail
+       |  $jwt
+       |  encryption { key = "MDEyMzQ1Njc4OWFiY2RlZg==" }
+       |}""".stripMargin
+
+  private val withBadLinkUrl =
+    s"""app {
+       |  database { host = "localhost", port = 3306, name = "api_store", user = "app", password = "db-secret" }
+       |  mail { host = "localhost", port = 1025, user = "", password = "", from = "no-reply@apistore.local", link-base-url = "http://localhost:3000/" }
+       |  $jwt
+       |  $encryption
        |}""".stripMargin
 
   "AppConfig.load" should {
@@ -60,6 +81,11 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
         case Right(_) =>
           fail("Expected the bad configuration to be rejected")
       }
+    }
+
+    "reject a link base URL with a trailing slash" in {
+      an[IllegalArgumentException] should be thrownBy
+        AppConfig.load(ConfigSource.string(withBadLinkUrl))
     }
 
     "never show passwords when the configuration is printed" in {
@@ -89,6 +115,11 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
     "reject a jwt secret shorter than 32 bytes" in {
       an[IllegalArgumentException] should be thrownBy
         AppConfig.load(ConfigSource.string(withShortSecret))
+    }
+
+    "reject an encryption key that is not 32 bytes" in {
+      an[IllegalArgumentException] should be thrownBy
+        AppConfig.load(ConfigSource.string(withShortKey))
     }
   }
 }

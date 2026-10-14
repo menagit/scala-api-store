@@ -5,7 +5,7 @@ import com.mendev.apistore.shared.config.AppConfig
 import com.mendev.apistore.shared.db.{FlywayMigrator, PlayDbTxRunner, TxRunner}
 import com.mendev.apistore.shared.health.HealthCheck
 import com.mendev.apistore.shared.health.web.HealthController
-import com.mendev.apistore.shared.security.RateLimiter
+import com.mendev.apistore.shared.security.{RateLimiter, TokenCipher}
 import play.api.ContextBasedBuiltInComponents
 import play.api.db.{DBComponents, HikariCPComponents}
 import pureconfig.ConfigSource
@@ -39,4 +39,6 @@ trait SharedComponents extends DBComponents with HikariCPComponents {
   lazy val healthController: HealthController = new HealthController(controllerComponents, healthCheck)(executionContext)
 
   lazy val eventPublisher: EventPublisher = new RelateEventPublisher
+
+  lazy val tokenCipher: TokenCipher = new TokenCipher(appConfig.encryption.key)
 }

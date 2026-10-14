@@ -14,11 +14,11 @@ class RelateDeliveryRepository extends DeliveryRepository {
       val entity = DeliveryEntity.fromNew(eventId, delivery, at)
       sql"""
         INSERT INTO notifications_delivery
-          (event_id, recipient_public_id, recipient_email, template, data, status, attempts,
+          (event_id, recipient_public_id, recipient_email, template, data, secret, status, attempts,
            next_attempt_at, created_at, updated_at)
         VALUES
           (${entity.eventId}, ${entity.recipientPublicId}, ${entity.recipientEmail}, ${entity.template},
-           ${entity.data}, ${entity.status}, ${entity.attempts},
+           ${entity.data},${entity.secret}, ${entity.status}, ${entity.attempts},
            ${entity.nextAttemptAt}, ${entity.createdAt}, ${entity.updatedAt})
       """.executeUpdate()(conn)
     }
@@ -28,7 +28,7 @@ class RelateDeliveryRepository extends DeliveryRepository {
     val sending = DeliveryStatus.Sending.value
 
     val due = sql"""
-      SELECT id, event_id, recipient_public_id, recipient_email, template, data, status, attempts,
+      SELECT id, event_id, recipient_public_id, recipient_email, template, data,secret, status, attempts,
              next_attempt_at, created_at, updated_at
       FROM notifications_delivery
       WHERE status = $pending AND next_attempt_at <= $now
@@ -51,7 +51,8 @@ class RelateDeliveryRepository extends DeliveryRepository {
     val sent    = DeliveryStatus.Sent.value
     val sending = DeliveryStatus.Sending.value
     val updated = sql"""
-      UPDATE notifications_delivery SET status = $sent, updated_at = $at
+      UPDATE notifications_delivery SET status = $sent,
+      secret = NULL, updated_at = $at
       WHERE id = $id AND status = $sending
     """.executeUpdate()(conn)
     expectOne(updated, id)
@@ -72,7 +73,7 @@ class RelateDeliveryRepository extends DeliveryRepository {
     val failed  = DeliveryStatus.Failed.value
     val sending = DeliveryStatus.Sending.value
     val updated = sql"""
-      UPDATE notifications_delivery SET status = $failed, attempts = $attempts, updated_at = $at
+      UPDATE notifications_delivery SET status = $failed, attempts = $attempts, secret = NULL, updated_at = $at
       WHERE id = $id AND status = $sending
     """.executeUpdate()(conn)
     expectOne(updated, id)
