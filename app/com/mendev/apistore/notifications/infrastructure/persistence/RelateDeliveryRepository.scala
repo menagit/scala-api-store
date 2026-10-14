@@ -14,10 +14,10 @@ class RelateDeliveryRepository extends DeliveryRepository {
       val entity = DeliveryEntity.fromNew(eventId, delivery, at)
       sql"""
         INSERT INTO notifications_delivery
-          (event_id, recipient_user_id, recipient_email, template, data, status, attempts,
+          (event_id, recipient_public_id, recipient_email, template, data, status, attempts,
            next_attempt_at, created_at, updated_at)
         VALUES
-          (${entity.eventId}, ${entity.recipientUserId}, ${entity.recipientEmail}, ${entity.template},
+          (${entity.eventId}, ${entity.recipientPublicId}, ${entity.recipientEmail}, ${entity.template},
            ${entity.data}, ${entity.status}, ${entity.attempts},
            ${entity.nextAttemptAt}, ${entity.createdAt}, ${entity.updatedAt})
       """.executeUpdate()(conn)
@@ -28,7 +28,7 @@ class RelateDeliveryRepository extends DeliveryRepository {
     val sending = DeliveryStatus.Sending.value
 
     val due = sql"""
-      SELECT id, event_id, recipient_user_id, recipient_email, template, data, status, attempts,
+      SELECT id, event_id, recipient_public_id, recipient_email, template, data, status, attempts,
              next_attempt_at, created_at, updated_at
       FROM notifications_delivery
       WHERE status = $pending AND next_attempt_at <= $now

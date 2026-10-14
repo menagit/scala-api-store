@@ -9,6 +9,7 @@ import com.mendev.apistore.shared.security.RateLimiter
 import play.api.ContextBasedBuiltInComponents
 import play.api.db.{DBComponents, HikariCPComponents}
 import pureconfig.ConfigSource
+import com.mendev.apistore.shared.events.{EventPublisher, RelateEventPublisher}
 
 import java.time.Clock
 
@@ -36,4 +37,6 @@ trait SharedComponents extends DBComponents with HikariCPComponents {
 
   lazy val healthCheck: HealthCheck           = new HealthCheck(txRunner)
   lazy val healthController: HealthController = new HealthController(controllerComponents, healthCheck)(executionContext)
+
+  lazy val eventPublisher: EventPublisher = new RelateEventPublisher
 }

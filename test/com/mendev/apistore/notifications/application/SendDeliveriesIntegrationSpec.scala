@@ -59,10 +59,10 @@ class SendDeliveriesIntegrationSpec extends AnyWordSpec with Matchers with Eithe
     nextEventId += 1
     TestDatabase.update(
       s"""INSERT INTO notifications_delivery
-         |  (event_id, recipient_user_id, recipient_email, template, data, status, attempts,
+         |  (event_id, recipient_public_id, recipient_email, template, data, status, attempts,
          |   next_attempt_at, created_at, updated_at)
          |VALUES
-         |  ($nextEventId, 1, 'ana@example.test', '$template', '$data', 'PENDING', $attempts,
+         |  ($nextEventId, '0192f1c8-7b3e-7a10-8c44-5d2f6e9a1b07', 'ana@example.test', '$template', '$data', 'PENDING', $attempts,
          |   '$nextAttemptAt', '2026-01-01 09:00:00.000000', '2026-01-01 09:00:00.000000')""".stripMargin
     )
   }

@@ -1,13 +1,14 @@
 package com.mendev.apistore.notifications
 
 import com.mendev.apistore.notifications.application.*
-import com.mendev.apistore.notifications.infrastructure.events.RoutingEventDispatcher
+import com.mendev.apistore.notifications.infrastructure.events.{EventRoute, RoutingEventDispatcher}
 import com.mendev.apistore.notifications.infrastructure.jobs.OutboxPollerJob
 import com.mendev.apistore.notifications.infrastructure.mail.{PlayMailerEmailSender, TwirlTemplateRenderer}
 import com.mendev.apistore.notifications.infrastructure.persistence.{RelateDeliveryRepository, RelateEventRepository}
 import com.mendev.apistore.shared.SharedComponents
 import play.api.ContextBasedBuiltInComponents
 import play.api.libs.mailer.MailerComponents
+import com.mendev.apistore.notifications.infrastructure.events.PasswordChangedEventReads.reads
 
 trait NotificationsComponents extends MailerComponents {
   this: ContextBasedBuiltInComponents with SharedComponents =>   // Play basics + shared (allowed for every context)
@@ -21,8 +22,12 @@ trait NotificationsComponents extends MailerComponents {
   lazy val deliveryRepository: DeliveryRepository = new RelateDeliveryRepository
   lazy val templateRenderer: TemplateRenderer     = new TwirlTemplateRenderer
 
-  // No routes yet: every event is skipped until the first handler is added (T2.8.2).
-  lazy val eventDispatcher: EventDispatcher = new RoutingEventDispatcher(Nil)
+  lazy val passwordChangedHandler: PasswordChangedHandler = new PasswordChangedHandler
+
+  lazy val eventDispatcher: EventDispatcher =
+    new RoutingEventDispatcher(
+      List(EventRoute("PasswordChanged", passwordChangedHandler))
+    )
 
   lazy val fanOutEventsUseCase: FanOutEventsUseCase =
     new FanOutEventsUseCase(eventRepository, deliveryRepository, eventDispatcher, txRunner, clock)

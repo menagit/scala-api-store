@@ -4,7 +4,7 @@ package com.mendev.apistore.notifications.application
 final case class Delivery(
     id: Long,
     eventId: Long,
-    recipientUserId: Long,
+    recipientPublicId: String,
     recipientEmail: String,
     template: String,
     data: Map[String, String],

@@ -3,17 +3,19 @@ package com.mendev.apistore.identity.application
 import com.mendev.apistore.shared.db.TxRunner
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.security.Actor
-import com.mendev.apistore.identity.domain.User
+import com.mendev.apistore.identity.domain.{PasswordChanged, User}
+import com.mendev.apistore.shared.events.EventPublisher
 
 import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 class ChangePasswordUseCase(userRepo: UserRepository,
-                            tokenRepo: TokenRepository,
-                            runner: TxRunner,
-                            clock: Clock,
-                            pwdHasher: PasswordHasher)
-                           (implicit ec:ExecutionContext){
+   tokenRepo: TokenRepository,
+  runner: TxRunner,
+  clock: Clock,
+  pwdHasher: PasswordHasher,
+  events: EventPublisher)
+(implicit ec:ExecutionContext){
 
   def execute(command: ChangePasswordCommand, actor: Actor): Future[Either[AppError, Unit]] = {
     if(!User.isValidPassword(command.newPwd))
@@ -56,6 +58,7 @@ class ChangePasswordUseCase(userRepo: UserRepository,
                         case Left(error) => Left(error)
                         case Right(_) =>
                           tokenRepo.revokeAllForUser(actor.publicId, now, conn)
+                          events.publish(PasswordChanged(user.publicId, user.email, user.firstName, now), now, conn)
                           Right(())
                       }
                   }
