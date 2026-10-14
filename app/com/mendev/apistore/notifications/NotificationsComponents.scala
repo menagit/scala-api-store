@@ -1,7 +1,7 @@
 package com.mendev.apistore.notifications
 
 import com.mendev.apistore.notifications.application.*
-import com.mendev.apistore.notifications.infrastructure.events.{EventRoute, RoutingEventDispatcher}
+import com.mendev.apistore.notifications.infrastructure.events.{EventRoute, RoutingEventDispatcher,PasswordResetRequestedEventReads}
 import com.mendev.apistore.notifications.infrastructure.jobs.OutboxPollerJob
 import com.mendev.apistore.notifications.infrastructure.mail.{PlayMailerEmailSender, TwirlTemplateRenderer}
 import com.mendev.apistore.notifications.infrastructure.persistence.{RelateDeliveryRepository, RelateEventRepository}
@@ -20,13 +20,19 @@ trait NotificationsComponents extends MailerComponents {
 
   lazy val eventRepository: EventRepository       = new RelateEventRepository
   lazy val deliveryRepository: DeliveryRepository = new RelateDeliveryRepository
-  lazy val templateRenderer: TemplateRenderer     = new TwirlTemplateRenderer
+  lazy val templateRenderer: TemplateRenderer =
+    new TwirlTemplateRenderer(tokenCipher, appConfig.mail.linkBaseUrl)
 
   lazy val passwordChangedHandler: PasswordChangedHandler = new PasswordChangedHandler
 
+  lazy val passwordResetRequestedHandler: PasswordResetRequestedHandler = new PasswordResetRequestedHandler
+
   lazy val eventDispatcher: EventDispatcher =
     new RoutingEventDispatcher(
-      List(EventRoute("PasswordChanged", passwordChangedHandler))
+      List(
+        EventRoute("PasswordChanged", passwordChangedHandler),
+        EventRoute("PasswordResetRequested", passwordResetRequestedHandler)(PasswordResetRequestedEventReads.reads)
+      )
     )
 
   lazy val fanOutEventsUseCase: FanOutEventsUseCase =

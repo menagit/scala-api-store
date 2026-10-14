@@ -2,8 +2,10 @@ package com.mendev.apistore.notifications.application
 
 import com.mendev.apistore.notifications.infrastructure.mail.TwirlTemplateRenderer
 import com.mendev.apistore.notifications.infrastructure.persistence.RelateDeliveryRepository
+import com.mendev.apistore.shared.config.Secret
 import com.mendev.apistore.shared.db.TestDatabase
 import com.mendev.apistore.shared.error.AppError
+import com.mendev.apistore.shared.security.TokenCipher
 import org.scalatest.{BeforeAndAfterEach, EitherValues}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -37,7 +39,10 @@ class SendDeliveriesIntegrationSpec extends AnyWordSpec with Matchers with Eithe
   private def useCase(sender: EmailSender) =
     new SendDeliveriesUseCase(
       new RelateDeliveryRepository,
-      new TwirlTemplateRenderer,
+      new TwirlTemplateRenderer(
+        new TokenCipher(Secret("MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=")),
+        "http://localhost:3000"
+      ),
       sender,
       TestDatabase.txRunner,
       clock
