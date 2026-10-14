@@ -1,6 +1,6 @@
 package com.mendev.apistore.identity.infrastructure.web
 
-import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessTokenUseCase, SignInUseCase, SignInCommand, SignInResult, SignOutUseCase, SignUpUseCase, SignUpCommand,ChangePasswordCommand, ChangePasswordUseCase,ForgotPasswordUseCase,ForgotPasswordCommand}
+import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessTokenUseCase, SignInUseCase, SignInCommand, SignInResult, SignOutUseCase, SignUpUseCase, SignUpCommand,ChangePasswordCommand, ChangePasswordUseCase,ForgotPasswordUseCase,ForgotPasswordCommand,ResetPasswordUseCase,ResetPasswordCommand}
 import com.mendev.apistore.shared.*
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.web.ErrorResponse
@@ -24,7 +24,8 @@ class AuthController (
                        signOutUseCase: SignOutUseCase,
                        authenticated: AuthenticatedAction,
                        changePasswordUseCase: ChangePasswordUseCase,
-                       forgotPasswordUseCase: ForgotPasswordUseCase
+                       forgotPasswordUseCase: ForgotPasswordUseCase,
+                       resetPasswordUseCase: ResetPasswordUseCase
                                )(implicit ec: ExecutionContext)
   extends AbstractController(cc)  {
 
@@ -146,6 +147,25 @@ class AuthController (
     }
   }
 
+  /**
+   * Reset-password Endpoint: no login needed, the reset token is the proof.
+   * Success is 204
+   */
+  def resetPassword: Action[String] = Action.async(parse.tolerantText) { request =>
+    val parsed: Either[AppError, ResetPasswordCommand] =
+      readBody[ResetPasswordRequest](request.body).flatMap(toResetPasswordCommand)
+
+    parsed match {
+      case Left(error) =>
+        Future.successful(ErrorResponse.result(error))
+      case Right(command) =>
+        resetPasswordUseCase.execute(command).map {
+          case Right(_)    => NoContent.discardingCookies(discardRefreshCookie)
+          case Left(error) => ErrorResponse.result(error)
+        }
+    }
+  }
+
   private val invalidBody: AppError =
     AppError.Validation("Invalid request", List(FieldError("body", "is not valid for this endpoint")))
 
@@ -168,6 +188,21 @@ class AuthController (
         Left(AppError.Validation("Invalid request", missing))
     }
   }
+
+  /**
+   * Helper method to create the reset pwd command
+   * @param req
+   * @return
+   */
+  private def toResetPasswordCommand(req: ResetPasswordRequest): Either[AppError, ResetPasswordCommand] =
+    (req.token, req.newPassword) match {
+      case (Some(token), Some(next)) =>
+        Right(ResetPasswordCommand(token, next))
+      case _ =>
+        val missing = List("token" -> req.token, "newPassword" -> req.newPassword)
+          .collect { case (name, None) => FieldError(name, "is required") }
+        Left(AppError.Validation("Invalid request", missing))
+    }
 
   /**
    * Helper method to create the signIn command
