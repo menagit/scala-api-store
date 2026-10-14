@@ -51,7 +51,7 @@ trait IdentityComponents {
     new TokenCleanupJob(cleanupExpiredTokensUseCase, actorSystem, applicationLifecycle)(executionContext)
 
   lazy val authController: AuthController =
-    new AuthController(controllerComponents, signUpUseCase, signInUseCase, rateLimitedAction, refreshAccessTokenUseCase,signOutUseCase,authenticatedAction, changePasswordUseCase)(executionContext)
+    new AuthController(controllerComponents, signUpUseCase, signInUseCase, rateLimitedAction, refreshAccessTokenUseCase,signOutUseCase,authenticatedAction, changePasswordUseCase,forgotPasswordUseCase)(executionContext)
 
   lazy val meController: MeController =
     new MeController(controllerComponents, authenticatedAction )

@@ -1,6 +1,6 @@
 package com.mendev.apistore.identity.infrastructure.web
 
-import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessTokenUseCase, SignInUseCase, SignInCommand, SignInResult, SignOutUseCase, SignUpUseCase, SignUpCommand,ChangePasswordCommand, ChangePasswordUseCase}
+import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessTokenUseCase, SignInUseCase, SignInCommand, SignInResult, SignOutUseCase, SignUpUseCase, SignUpCommand,ChangePasswordCommand, ChangePasswordUseCase,ForgotPasswordUseCase,ForgotPasswordCommand}
 import com.mendev.apistore.shared.*
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.web.ErrorResponse
@@ -23,7 +23,8 @@ class AuthController (
                        refreshUseCase: RefreshAccessTokenUseCase,
                        signOutUseCase: SignOutUseCase,
                        authenticated: AuthenticatedAction,
-                       changePasswordUseCase: ChangePasswordUseCase
+                       changePasswordUseCase: ChangePasswordUseCase,
+                       forgotPasswordUseCase: ForgotPasswordUseCase
                                )(implicit ec: ExecutionContext)
   extends AbstractController(cc)  {
 
@@ -126,11 +127,31 @@ class AuthController (
     }
   }
 
+  /**
+   * Forgot-password Endpoint: no login needed.
+   * Always 202 for a valid request, whether or not the email exists.
+   */
+  def forgotPassword: Action[String] = Action.async(parse.tolerantText) { request =>
+    val parsed: Either[AppError, ForgotPasswordCommand] =
+      readBody[ForgotPasswordRequest](request.body).flatMap(toForgotPasswordCommand)
+
+    parsed match {
+      case Left(error) =>
+        Future.successful(ErrorResponse.result(error))
+      case Right(command) =>
+        forgotPasswordUseCase.execute(command).map {
+          case Right(_)    => Accepted
+          case Left(error) => ErrorResponse.result(error)
+        }
+    }
+  }
+
   private val invalidBody: AppError =
     AppError.Validation("Invalid request", List(FieldError("body", "is not valid for this endpoint")))
 
   private def readBody[A: Reads](body: String): Either[AppError, A] =
     Try(Json.parse(body)).toOption.flatMap(_.asOpt[A]).toRight(invalidBody)
+
   /**
    * Helper method to create the signUp command
    * @param req
@@ -161,6 +182,17 @@ class AuthController (
         val missing = List("email" -> req.email, "password" -> req.password)
           .collect { case (name, None) => FieldError(name, "is required") }
         Left(AppError.Validation("Invalid request", missing))
+    }
+
+  /**
+   * Helper method to create the command
+   * @param req
+   * @return
+   */
+  private def toForgotPasswordCommand(req: ForgotPasswordRequest): Either[AppError, ForgotPasswordCommand] =
+    req.email match {
+      case Some(email) => Right(ForgotPasswordCommand(email))
+      case None        => Left(AppError.Validation("Invalid request", List(FieldError("email", "is required"))))
     }
 
   private def toChangePasswordCommand(req: ChangePasswordRequest): Either[AppError, ChangePasswordCommand] =
