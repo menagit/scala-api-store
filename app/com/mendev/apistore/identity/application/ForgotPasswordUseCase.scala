@@ -31,7 +31,8 @@ class ForgotPasswordUseCase(
         case None => Right(())
         case Some(user) =>
           val generated = tokenGenerator.generate()
-
+          //Has to be before or the new link would be revoked
+          tokenRepo.revokeAllForUser(user.publicId,TokenType.PasswordReset,now,conn)
           // Only the hash is stored.
           tokenRepo.insert(
             StoredToken(
@@ -56,7 +57,6 @@ class ForgotPasswordUseCase(
             now,
             conn
           )
-
           Right(())
       }
     }
