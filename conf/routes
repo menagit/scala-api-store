@@ -10,3 +10,4 @@ POST  /auth/sign-out                com.mendev.apistore.identity.infrastructure.
 GET   /me                           com.mendev.apistore.identity.infrastructure.web.MeController.me
 POST  /auth/change-password         com.mendev.apistore.identity.infrastructure.web.AuthController.changePassword
 POST  /auth/forgot-password         com.mendev.apistore.identity.infrastructure.web.AuthController.forgotPassword
+POST  /auth/reset-password          com.mendev.apistore.identity.infrastructure.web.AuthController.resetPassword

@@ -57,7 +57,7 @@ class ChangePasswordUseCase(userRepo: UserRepository,
                       userRepo.incrementTokenVersion(actor.publicId, now, conn) match {
                         case Left(error) => Left(error)
                         case Right(_) =>
-                          tokenRepo.revokeAllForUser(actor.publicId, now, conn)
+                          tokenRepo.revokeAllForUser(actor.publicId, TokenType.Refresh, now, conn)
                           events.publish(PasswordChanged(user.publicId, user.email, user.firstName, now), now, conn)
                           Right(())
                       }
