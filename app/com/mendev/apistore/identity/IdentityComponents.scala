@@ -39,7 +39,7 @@ trait IdentityComponents {
   )(executionContext)
 
   lazy val changePasswordUseCase: ChangePasswordUseCase =
-    new ChangePasswordUseCase(userRepository, tokenRepository, txRunner, clock, passwordHasher)(executionContext)
+    new ChangePasswordUseCase(userRepository, tokenRepository, txRunner, clock, passwordHasher,eventPublisher)(executionContext)
 
   lazy val cleanupExpiredTokensUseCase: CleanupExpiredTokensUseCase =
     new CleanupExpiredTokensUseCase(tokenRepository, txRunner, clock)
