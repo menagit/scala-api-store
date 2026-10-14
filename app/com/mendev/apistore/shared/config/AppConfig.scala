@@ -4,6 +4,8 @@ import pureconfig.ConfigSource
 import pureconfig.error.ConfigReaderFailures
 import pureconfig.generic.auto.*
 import com.mendev.apistore.shared.config.EncryptionConfig
+import java.net.URI
+import scala.util.Try
 
 final case class DatabaseConfig(
                                  host: String,
@@ -19,8 +21,15 @@ final case class MailConfig(
                              port: Int,
                              user: String,
                              password: Secret,
-                             from: String
-                           )
+                             from: String,
+                             linkBaseUrl: String // front-end address used in email links
+                           ) {
+
+  require(
+    MailConfig.isValidBaseUrl(linkBaseUrl),
+    "The link base URL must be an http or https address with no trailing slash"
+  )
+}
 
 final case class AppConfig(
                             database: DatabaseConfig,
@@ -33,4 +42,15 @@ object AppConfig {
 
   def load(source: ConfigSource): Either[ConfigReaderFailures, AppConfig] =
     source.at("app").load[AppConfig]
+}
+
+object MailConfig {
+
+  private def isValidBaseUrl(value: String): Boolean =
+    Try {
+      val uri = new URI(value)
+      (uri.getScheme == "http" || uri.getScheme == "https") &&
+        uri.getHost != null &&
+        !value.endsWith("/")
+    }.getOrElse(false)
 }
