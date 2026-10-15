@@ -115,6 +115,7 @@ All code is under the package prefix `com.mendev.apistore` (folder `app/com/mend
 - Constraint names: `uk_`, `ix_`, `ck_` + `<table>_<cols>`.
 - No foreign keys at all. Integrity comes from application rules and unique indexes. Add an index on every join and filter column.
 - Soft delete only for products (`deleted_at`). Everything else is hard-deleted.
+- Product creation, status changes and deletes are recorded in `catalog_product_status_history` (append-only).
 - Stock changes use one atomic statement (`... WHERE id = ? AND stock >= ?`) and check that exactly one row changed.
 - Flyway: one flat folder `conf/db/migration`, one global version sequence, context in the file name (`V2__identity_create_user.sql`, `V1__shared_create_event.sql`). The runner (`FlywayMigrator`) starts with the app. Never edit a migration that has been applied; add a new one.
 - Each context's tables are added in the phase that builds that context, not up front.
