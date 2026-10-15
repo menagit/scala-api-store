@@ -1,6 +1,6 @@
 package com.mendev.apistore.shared
 
-import com.mendev.apistore.shared.actions.RateLimitedAction
+import com.mendev.apistore.shared.actions.{RateLimitedAction, RoleAction}
 import com.mendev.apistore.shared.config.AppConfig
 import com.mendev.apistore.shared.db.{FlywayMigrator, PlayDbTxRunner, TxRunner}
 import com.mendev.apistore.shared.health.HealthCheck
@@ -34,6 +34,7 @@ trait SharedComponents extends DBComponents with HikariCPComponents {
 
   lazy val rateLimiter: RateLimiter             = new RateLimiter
   lazy val rateLimitedAction: RateLimitedAction = new RateLimitedAction(rateLimiter)(executionContext)
+  lazy val roleAction: RoleAction               = new RoleAction()(executionContext)
 
   lazy val healthCheck: HealthCheck           = new HealthCheck(txRunner)
   lazy val healthController: HealthController = new HealthController(controllerComponents, healthCheck)(executionContext)
