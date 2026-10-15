@@ -8,4 +8,6 @@ import java.sql.Connection
 trait CategoryRepository {
   // Ordered by id.
   def findAll(conn: Connection): Either[AppError, List[Category]]
+
+  def existsById(id: Long, conn: Connection): Either[AppError, Boolean]
 }
