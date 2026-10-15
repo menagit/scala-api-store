@@ -20,11 +20,14 @@ class RelateCategoryRepository extends CategoryRepository {
     Right(categories)
   }
 
-  override def existsById(id: Long, conn: Connection): Either[AppError, Boolean] = {
-    val found = sql"""
-      SELECT id FROM catalog_category WHERE id = $id
-    """.asSingleOption(_.long("id"))(conn)
+  override def findById(id: Long, conn: Connection): Either[AppError, Option[Category]] = {
+    val category = sql"""
+      SELECT id, name FROM catalog_category WHERE id = $id
+    """.asSingleOption(row => Category(row.long("id"), row.string("name")))(conn)
 
-    Right(found.isDefined)
+    Right(category)
   }
+
+  override def existsById(id: Long, conn: Connection): Either[AppError, Boolean] =
+    findById(id, conn).map(_.isDefined)
 }

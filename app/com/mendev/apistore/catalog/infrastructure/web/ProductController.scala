@@ -1,6 +1,6 @@
 package com.mendev.apistore.catalog.infrastructure.web
 
-import com.mendev.apistore.catalog.application.{CreateProductCommand, CreateProductUseCase, ListProductsQuery, ListProductsUseCase}
+import com.mendev.apistore.catalog.application.{CreateProductCommand, CreateProductUseCase, GetProductQuery, GetProductUseCase, ListProductsQuery, ListProductsUseCase}
 import com.mendev.apistore.shared.actions.{AuthenticatedAction, RoleAction}
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.security.Manager
@@ -15,6 +15,7 @@ class ProductController(
   cc: ControllerComponents,
   createProductUseCase: CreateProductUseCase,
   listProductsUseCase: ListProductsUseCase,
+  getProductUseCase: GetProductUseCase,
   authenticated: AuthenticatedAction,
   roleAction: RoleAction
 )(implicit ec: ExecutionContext)
@@ -38,6 +39,13 @@ class ProductController(
     )
     listProductsUseCase.execute(query).map {
       case Right(page) => Ok(ProductJson.pageToJson(page))
+      case Left(error) => ErrorResponse.result(error)
+    }
+  }
+
+  def detail(id: Long): Action[AnyContent] = Action.async {
+    getProductUseCase.execute(GetProductQuery(id)).map {
+      case Right(item) => Ok(ProductJson.detailToJson(item))
       case Left(error) => ErrorResponse.result(error)
     }
   }
