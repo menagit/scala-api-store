@@ -10,4 +10,6 @@ trait CategoryRepository {
   def findAll(conn: Connection): Either[AppError, List[Category]]
 
   def existsById(id: Long, conn: Connection): Either[AppError, Boolean]
+
+  def findById(id: Long, conn: Connection): Either[AppError, Option[Category]]
 }

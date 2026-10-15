@@ -37,6 +37,9 @@ object ProductJson {
     )
   }
 
+  def detailToJson(item: ProductListItem): JsObject =
+    toPublicJson(item) + ("images" -> Json.arr())
+
   def pageToJson(page: ProductPage): JsObject =
     Json.obj(
       "items"      -> page.items.map(toPublicJson),
