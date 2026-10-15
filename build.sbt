@@ -16,7 +16,7 @@ scalacOptions ++= Seq(
   "-Wunused"
 )
 
-//Test / parallelExecution := false
+Test / parallelExecution := false
 
 libraryDependencies ++= Seq(
   jdbc,
