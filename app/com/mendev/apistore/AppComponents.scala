@@ -1,5 +1,6 @@
 package com.mendev.apistore
 
+import com.mendev.apistore.catalog.CatalogComponents
 import com.mendev.apistore.identity.IdentityComponents
 import com.mendev.apistore.shared.SharedComponents
 import com.mendev.apistore.shared.web.JsonErrorHandler
@@ -18,6 +19,7 @@ class AppComponents(context: Context)
     with HttpFiltersComponents
     with SharedComponents
     with IdentityComponents
+    with CatalogComponents
     with NotificationsComponents
  {
 
