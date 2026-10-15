@@ -1,7 +1,5 @@
 package com.mendev.apistore.shared.config
 
-package com.mendev.apistore.shared.config
-
 import java.util.Base64
 import scala.util.Try
 
