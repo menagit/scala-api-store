@@ -10,6 +10,7 @@ scalaVersion := "2.13.18"
 // Scala 2.13 with Scala 3 syntax rules where the compiler supports them
 scalacOptions ++= Seq(
   "-Xsource:3",
+  "-Xsource-features:case-apply-copy-access",
   "-feature",
   "-deprecation",
   "-Wunused"
