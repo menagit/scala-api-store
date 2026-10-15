@@ -22,4 +22,6 @@ final case class Product(
   // Never stored: price x (100 - percent) / 100, half up, 2 decimals (ADR 0002).
   def discountedPrice: BigDecimal =
     (price.value * (100 - discount.percent) / 100).setScale(2, BigDecimal.RoundingMode.HALF_UP)
+
+  def inStock: Boolean = stock.value > 0
 }

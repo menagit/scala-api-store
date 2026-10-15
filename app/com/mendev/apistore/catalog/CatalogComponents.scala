@@ -1,6 +1,6 @@
 package com.mendev.apistore.catalog
 
-import com.mendev.apistore.catalog.application.{CategoryRepository, CreateProductUseCase, ProductRepository, ProductStatusHistoryRepository}
+import com.mendev.apistore.catalog.application.{CategoryRepository, CreateProductUseCase, ListProductsUseCase, ProductRepository, ProductStatusHistoryRepository}
 import com.mendev.apistore.catalog.infrastructure.persistence.{RelateCategoryRepository, RelateProductRepository, RelateProductStatusHistoryRepository}
 import com.mendev.apistore.catalog.infrastructure.web.ProductController
 import com.mendev.apistore.shared.actions.AuthenticatedAction
@@ -19,6 +19,9 @@ trait CatalogComponents {
   lazy val createProductUseCase: CreateProductUseCase =
     new CreateProductUseCase(productRepository, categoryRepository, productStatusHistoryRepository, txRunner, clock)
 
+  lazy val listProductsUseCase: ListProductsUseCase =
+    new ListProductsUseCase(productRepository, categoryRepository, txRunner)
+
   lazy val productController: ProductController =
-    new ProductController(controllerComponents, createProductUseCase, authenticatedAction, roleAction)(executionContext)
+    new ProductController(controllerComponents, createProductUseCase, listProductsUseCase, authenticatedAction, roleAction)(executionContext)
 }

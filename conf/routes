@@ -12,3 +12,4 @@ POST  /auth/change-password         com.mendev.apistore.identity.infrastructure.
 POST  /auth/forgot-password         com.mendev.apistore.identity.infrastructure.web.AuthController.forgotPassword
 POST  /auth/reset-password          com.mendev.apistore.identity.infrastructure.web.AuthController.resetPassword
 POST  /products                     com.mendev.apistore.catalog.infrastructure.web.ProductController.create
+GET   /products                     com.mendev.apistore.catalog.infrastructure.web.ProductController.list
