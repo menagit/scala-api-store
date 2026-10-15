@@ -1,12 +1,12 @@
 package com.mendev.apistore.catalog.infrastructure.web
 
-import com.mendev.apistore.catalog.application.{CreateProductCommand, CreateProductUseCase}
+import com.mendev.apistore.catalog.application.{CreateProductCommand, CreateProductUseCase, ListProductsQuery, ListProductsUseCase}
 import com.mendev.apistore.shared.actions.{AuthenticatedAction, RoleAction}
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.security.Manager
 import com.mendev.apistore.shared.web.ErrorResponse
 import play.api.libs.json.{Json, Reads}
-import play.api.mvc.{AbstractController, Action, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -14,6 +14,7 @@ import scala.util.Try
 class ProductController(
   cc: ControllerComponents,
   createProductUseCase: CreateProductUseCase,
+  listProductsUseCase: ListProductsUseCase,
   authenticated: AuthenticatedAction,
   roleAction: RoleAction
 )(implicit ec: ExecutionContext)
@@ -27,6 +28,17 @@ class ProductController(
           case Right(product) => Created(ProductJson.toJson(product))
           case Left(error)    => ErrorResponse.result(error)
         }
+    }
+  }
+
+  def list: Action[AnyContent] = Action.async { request =>
+    val query = ListProductsQuery(
+      request.getQueryString("page"), request.getQueryString("size"),
+      request.getQueryString("sort"), request.getQueryString("order")
+    )
+    listProductsUseCase.execute(query).map {
+      case Right(page) => Ok(ProductJson.pageToJson(page))
+      case Left(error) => ErrorResponse.result(error)
     }
   }
 
