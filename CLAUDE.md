@@ -86,6 +86,7 @@ All code is under the package prefix `com.mendev.apistore` (folder `app/com/mend
 
 - Braces style, Scala 2.13 with `-Xsource:3`. No Scala 3 `enum`: use `sealed trait` + `case object` / `case class` for statuses and errors.
 - Expected failures are values: `Future[Either[AppError, A]]`. Throw only for bugs. `AppError` lives in `shared.error`; `ErrorResponse` turns it into a status and the one JSON error shape. Never send stack traces or exception messages to the client.
+- The `graphql` adapter turns a `Left(AppError)` into a failed `Future` for Sangria; nowhere else throws for expected failures.
 - No custom annotations for behavior. Use composable Play actions.
 - Nullable values are `Option`. Never `null`, never `.get` on `Option`.
 - Money is `BigDecimal`, never `Double`. Rounding is explicit (half up, 2 decimals).
