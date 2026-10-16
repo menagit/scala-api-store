@@ -4,12 +4,10 @@ import com.mendev.apistore.catalog.application.{CreateProductCommand, CreateProd
 import com.mendev.apistore.shared.actions.{AuthenticatedAction, RoleAction}
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.security.Manager
-import com.mendev.apistore.shared.web.ErrorResponse
-import play.api.libs.json.{Json, Reads}
+import com.mendev.apistore.shared.web.{ErrorResponse, JsonBody}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 class ProductController(
   cc: ControllerComponents,
@@ -22,7 +20,7 @@ class ProductController(
   extends AbstractController(cc) {
 
   def create: Action[String] = (authenticated andThen roleAction(Manager)).async(parse.tolerantText) { request =>
-    readBody[CreateProductRequest](request.body).flatMap(toCommand) match {
+    JsonBody.read[CreateProductRequest](request.body).flatMap(toCommand) match {
       case Left(error) => Future.successful(ErrorResponse.result(error))
       case Right(command) =>
         createProductUseCase.execute(request.actor, command).map {
@@ -49,12 +47,6 @@ class ProductController(
       case Left(error) => ErrorResponse.result(error)
     }
   }
-
-  private val invalidBody: AppError =
-    AppError.Validation("Invalid request", List(FieldError("body", "is not valid for this endpoint")))
-
-  private def readBody[A: Reads](body: String): Either[AppError, A] =
-    Try(Json.parse(body)).toOption.flatMap(_.asOpt[A]).toRight(invalidBody)
 
   private def toCommand(req: CreateProductRequest): Either[AppError, CreateProductCommand] =
     (req.name, req.description, req.categoryId, req.price, req.discountPercent, req.stock) match {

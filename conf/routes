@@ -14,3 +14,4 @@ POST  /auth/reset-password          com.mendev.apistore.identity.infrastructure.
 POST  /products                     com.mendev.apistore.catalog.infrastructure.web.ProductController.create
 GET   /products                     com.mendev.apistore.catalog.infrastructure.web.ProductController.list
 GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.web.ProductController.detail(id: Long)
+POST  /graphql                      com.mendev.apistore.graphql.GraphQLController.execute

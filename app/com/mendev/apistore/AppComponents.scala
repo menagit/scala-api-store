@@ -1,6 +1,7 @@
 package com.mendev.apistore
 
 import com.mendev.apistore.catalog.CatalogComponents
+import com.mendev.apistore.graphql.GraphQLComponents
 import com.mendev.apistore.identity.IdentityComponents
 import com.mendev.apistore.shared.SharedComponents
 import com.mendev.apistore.shared.web.JsonErrorHandler
@@ -21,6 +22,7 @@ class AppComponents(context: Context)
     with IdentityComponents
     with CatalogComponents
     with NotificationsComponents
+    with GraphQLComponents
  {
 
   // Run the migrations now, before the app takes requests (was asEagerSingleton).
@@ -33,7 +35,7 @@ class AppComponents(context: Context)
   override lazy val httpErrorHandler: HttpErrorHandler = new JsonErrorHandler
 
   // Arguments follow the order in conf/routes: error handler, then each controller once.
-  lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController, productController)
+  lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController, productController, graphQLController)
 
   // No Play CSRF filter: this is a token-less JSON API. 
   override def httpFilters: Seq[EssentialFilter] =
