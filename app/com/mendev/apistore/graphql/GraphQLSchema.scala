@@ -3,7 +3,7 @@ package com.mendev.apistore.graphql
 import com.mendev.apistore.shared.security.{Actor, Client, Manager, Role}
 import sangria.schema.{Field, ObjectType, Schema, StringType, fields}
 
-object GraphQLSchema {
+class GraphQLSchema(shopping: ShoppingSchema) {
 
   private val MeType: ObjectType[GraphQLContext, Actor] = ObjectType(
     "Me",
@@ -17,10 +17,12 @@ object GraphQLSchema {
     "Query",
     fields[GraphQLContext, Unit](
       Field("me", MeType, resolve = _.ctx.actor)
-    )
+    ) ++ shopping.queryFields
   )
 
-  val schema: Schema[GraphQLContext, Unit] = Schema(QueryType)
+  private val MutationType: ObjectType[GraphQLContext, Unit] = ObjectType("Mutation", shopping.mutationFields)
+
+  val schema: Schema[GraphQLContext, Unit] = Schema(QueryType, Some(MutationType))
 
   private def roleText(role: Role): String = role match {
     case Manager => "MANAGER"
