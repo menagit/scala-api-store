@@ -4,6 +4,7 @@ import com.mendev.apistore.catalog.CatalogComponents
 import com.mendev.apistore.graphql.GraphQLComponents
 import com.mendev.apistore.identity.IdentityComponents
 import com.mendev.apistore.shared.SharedComponents
+import com.mendev.apistore.shopping.ShoppingComponents
 import com.mendev.apistore.shared.web.JsonErrorHandler
 import play.api.ApplicationLoader.Context
 import play.api.BuiltInComponentsFromContext
@@ -21,6 +22,7 @@ class AppComponents(context: Context)
     with SharedComponents
     with IdentityComponents
     with CatalogComponents
+    with ShoppingComponents
     with NotificationsComponents
     with GraphQLComponents
  {
