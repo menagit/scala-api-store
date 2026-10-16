@@ -3,7 +3,7 @@ package com.mendev.apistore.identity.infrastructure.web
 import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessTokenUseCase, SignInUseCase, SignInCommand, SignInResult, SignOutUseCase, SignUpUseCase, SignUpCommand,ChangePasswordCommand, ChangePasswordUseCase,ForgotPasswordUseCase,ForgotPasswordCommand,ResetPasswordUseCase,ResetPasswordCommand}
 import com.mendev.apistore.shared.*
 import com.mendev.apistore.shared.error.{AppError, FieldError}
-import com.mendev.apistore.shared.web.ErrorResponse
+import com.mendev.apistore.shared.web.{ErrorResponse, JsonBody}
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import com.mendev.apistore.shared.actions.RateLimitedAction
 import com.mendev.apistore.shared.actions.AuthenticatedAction
@@ -12,8 +12,7 @@ import com.mendev.apistore.identity.application.{IssuedRefreshToken, SignInUseCa
 import play.api.mvc.{AbstractController, Action, ControllerComponents, Cookie}
 import com.mendev.apistore.identity.application.{IssuedRefreshToken, RefreshAccessTokenUseCase, SignInUseCase, SignInCommand, SignInResult, SignUpUseCase, SignUpCommand}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Cookie, DiscardingCookie, Result}
-import play.api.libs.json.{Json, Reads}
-import scala.util.Try
+import play.api.libs.json.Json
 
 class AuthController (
                        cc: ControllerComponents,
@@ -40,7 +39,7 @@ class AuthController (
   def register: Action[String] = Action.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, SignUpCommand] =
       //io.circe.parser.decode[SignUpRequest](request.body).left.map(_ => invalidBody).flatMap(toCommand)
-      readBody[SignUpRequest](request.body).flatMap(toCommand)
+      JsonBody.read[SignUpRequest](request.body).flatMap(toCommand)
     parsed match {
       //The error case
       case Left(error) =>
@@ -63,7 +62,7 @@ class AuthController (
    */
   def login: Action[String] = (Action andThen rateLimited("sign-in")).async(parse.tolerantText) { request =>
     val parsed: Either[AppError, SignInCommand] =
-      readBody[SignInRequest](request.body).flatMap(toSignInCommand)
+      JsonBody.read[SignInRequest](request.body).flatMap(toSignInCommand)
 
     parsed match {
       case Left(error) =>
@@ -115,7 +114,7 @@ class AuthController (
    */
   def changePassword: Action[String] = authenticated.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, ChangePasswordCommand] =
-      readBody[ChangePasswordRequest](request.body).flatMap(toChangePasswordCommand)
+      JsonBody.read[ChangePasswordRequest](request.body).flatMap(toChangePasswordCommand)
 
     parsed match {
       case Left(error) =>
@@ -134,7 +133,7 @@ class AuthController (
    */
   def forgotPassword: Action[String] = Action.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, ForgotPasswordCommand] =
-      readBody[ForgotPasswordRequest](request.body).flatMap(toForgotPasswordCommand)
+      JsonBody.read[ForgotPasswordRequest](request.body).flatMap(toForgotPasswordCommand)
 
     parsed match {
       case Left(error) =>
@@ -153,7 +152,7 @@ class AuthController (
    */
   def resetPassword: Action[String] = Action.async(parse.tolerantText) { request =>
     val parsed: Either[AppError, ResetPasswordCommand] =
-      readBody[ResetPasswordRequest](request.body).flatMap(toResetPasswordCommand)
+      JsonBody.read[ResetPasswordRequest](request.body).flatMap(toResetPasswordCommand)
 
     parsed match {
       case Left(error) =>
@@ -165,12 +164,6 @@ class AuthController (
         }
     }
   }
-
-  private val invalidBody: AppError =
-    AppError.Validation("Invalid request", List(FieldError("body", "is not valid for this endpoint")))
-
-  private def readBody[A: Reads](body: String): Either[AppError, A] =
-    Try(Json.parse(body)).toOption.flatMap(_.asOpt[A]).toRight(invalidBody)
 
   /**
    * Helper method to create the signUp command
