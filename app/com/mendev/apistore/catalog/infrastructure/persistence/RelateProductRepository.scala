@@ -32,6 +32,16 @@ class RelateProductRepository extends ProductRepository {
     Right(entity.map(ProductEntity.toDomain))
   }
 
+  override def findByIds(ids: Seq[Long], conn: Connection): Either[AppError, List[Product]] = {
+    val entities = sql"""
+      SELECT id, name, description, category_id, price, discount_percent, stock, status, deleted_at, created_at, updated_at
+      FROM catalog_product
+      WHERE id IN ($ids)
+    """.asList(ProductEntity.fromRow)(conn)
+
+    Right(entities.map(ProductEntity.toDomain))
+  }
+
   override def findVisiblePage(sort: ProductSort, order: SortOrder, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Product]] = {
     val entities = (sql"""
       SELECT id, name, description, category_id, price, discount_percent, stock, status, deleted_at, created_at, updated_at
