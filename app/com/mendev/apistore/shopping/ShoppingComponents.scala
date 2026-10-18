@@ -2,7 +2,7 @@ package com.mendev.apistore.shopping
 
 import com.mendev.apistore.catalog.application.GetProductSummariesUseCase
 import com.mendev.apistore.shared.SharedComponents
-import com.mendev.apistore.shopping.application.{AddToCartUseCase, CartRepository, GetCartUseCase, ProductCatalog, RemoveFromCartUseCase, UpdateCartItemQuantityUseCase}
+import com.mendev.apistore.shopping.application.{AddToCartUseCase, CartRepository, ClearCartUseCase, GetCartUseCase, LockCartItemsUseCase, ProductCatalog, RemoveFromCartUseCase, UpdateCartItemQuantityUseCase}
 import com.mendev.apistore.shopping.infrastructure.catalog.InProcessProductCatalog
 import com.mendev.apistore.shopping.infrastructure.persistence.RelateCartRepository
 import play.api.ContextBasedBuiltInComponents
@@ -27,4 +27,8 @@ trait ShoppingComponents {
 
   lazy val updateCartItemQuantityUseCase: UpdateCartItemQuantityUseCase =
     new UpdateCartItemQuantityUseCase(productCatalog, removeFromCartUseCase, cartRepository, txRunner, clock)(executionContext)
+
+  lazy val lockCartItemsUseCase: LockCartItemsUseCase = new LockCartItemsUseCase(cartRepository)
+
+  lazy val clearCartUseCase: ClearCartUseCase = new ClearCartUseCase(cartRepository)
 }

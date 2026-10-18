@@ -15,6 +15,9 @@ import _root_.router.Routes
 import com.mendev.apistore.notifications.NotificationsComponents
 import play.api.mvc.EssentialFilter
 import com.mendev.apistore.notifications.application.EmailMessage
+import com.mendev.apistore.ordering.OrderingComponents
+import com.mendev.apistore.ordering.application.OrderIdGenerator
+import java.util.UUID
 
 class AppComponents(context: Context)
   extends BuiltInComponentsFromContext(context)
@@ -23,6 +26,7 @@ class AppComponents(context: Context)
     with IdentityComponents
     with CatalogComponents
     with ShoppingComponents
+    with OrderingComponents
     with NotificationsComponents
     with GraphQLComponents
  {
@@ -35,6 +39,8 @@ class AppComponents(context: Context)
    outboxPollerJob
 
   override lazy val httpErrorHandler: HttpErrorHandler = new JsonErrorHandler
+
+  lazy val orderIdGenerator: OrderIdGenerator = () => UUID.fromString(idGenerator.generatePublicId())
 
   // Arguments follow the order in conf/routes: error handler, then each controller once.
   lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController, productController, graphQLController)
