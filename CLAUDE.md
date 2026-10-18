@@ -68,6 +68,7 @@ All code is under the package prefix `com.mendev.apistore` (folder `app/com/mend
 - `shared` contains no domain concepts and depends on no context, except the caller identity (`Actor`, `Role`, `TokenClaims`). `shared/security` also holds the cross-cutting security tools (`TokenVerifier`, `RateLimiter`).
 - No Play types in the application layer (use cases and ports). `TxRunner` uses only `java.sql.Connection`, `Future` and `Either`. Play's `Database` appears only in `PlayDbTxRunner` and `SharedComponents`.
 - Use cases are classes in `application` named `<Verb><Thing>UseCase` (`SignInUseCase`), with one public `execute`. In the components trait the instance is `signInUseCase`.
+- A use case that another context calls inside its own transaction also gets `executeIn(..., conn)`, which returns `Either` and opens no transaction. `execute` runs it inside `runner.run` (`GetProductSummariesUseCase`).
 - Infrastructure has no loose classes at its root: each adapter goes in a subfolder named for what it does (`web`, `persistence`, `security`, `id`, `jobs`, `mail`). Email templates (Twirl) live in `mail/views`, not in a top-level `views` folder.
 - Controllers and resolvers are thin: parse, call a use case, map the result. No business rules in them.
 - Authorization in two layers: action builders at the edge (401/403), and an explicit `Actor` in every use case that acts for a user (404 for records that aren't yours).

@@ -87,6 +87,16 @@ class RelateCartRepository extends CartRepository {
     Right(())
   }
 
+  override def deleteCart(userPublicId: UUID, conn: Connection): Either[AppError, Unit] = {
+    val user = UuidBytes.toBytes(userPublicId)
+    sql"""
+      DELETE FROM shopping_cart_item
+      WHERE cart_id IN (SELECT id FROM shopping_cart WHERE user_public_id = $user)
+    """.executeUpdate()(conn)
+    sql"DELETE FROM shopping_cart WHERE user_public_id = $user".executeUpdate()(conn)
+    Right(())
+  }
+
   private def selectId(user: Array[Byte], conn: Connection): Long =
     sql"SELECT id FROM shopping_cart WHERE user_public_id = $user".asSingle(_.long("id"))(conn)
 }
