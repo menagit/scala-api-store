@@ -295,6 +295,43 @@ GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.w
 #            query: {type: string}
 #            operationName: {type: string}
 #            variables: {type: object}
+#        examples:
+#          me:
+#            summary: Who am I (any signed-in user)
+#            value:
+#              query: 'query { me { publicId role } }'
+#          addToCart:
+#            summary: Add to cart (client)
+#            value:
+#              query: 'mutation { addToCart(productId: 1, quantity: 2) { total lines { productId name quantity lineTotal } } }'
+#          myCart:
+#            summary: View my cart (client)
+#            value:
+#              query: 'query { myCart { total lines { productId name quantity price discountedPrice lineTotal available } } }'
+#          checkout:
+#            summary: Checkout (client)
+#            value:
+#              query: 'mutation { checkout { id status total createdAt items { productId productName unitPrice discountPercent discountedUnitPrice quantity lineTotal } } }'
+#          myOrders:
+#            summary: My orders (client)
+#            value:
+#              query: 'query { myOrders(page: 1, size: 20) { totalItems totalPages items { id status total createdAt } } }'
+#          orders:
+#            summary: All orders (manager)
+#            value:
+#              query: 'query { orders(page: 1, size: 20) { totalItems totalPages items { id status total createdAt } } }'
+#          shipOrder:
+#            summary: Ship an order (manager)
+#            value:
+#              query: 'mutation { shipOrder(id: "01a151da-a1d1-77e7-8355-a98c036410cd", trackingNumber: "TRACK-123", estimatedDelivery: "2026-10-30") { id status trackingNumber estimatedDelivery } }'
+#          deliverOrder:
+#            summary: Mark an order delivered (manager)
+#            value:
+#              query: 'mutation { deliverOrder(id: "01a151da-a1d1-77e7-8355-a98c036410cd") { id status } }'
+#          cancelOrder:
+#            summary: Cancel an order (manager, stock goes back)
+#            value:
+#              query: 'mutation { cancelOrder(id: "01a151da-a1d1-77e7-8355-a98c036410cd") { id status } }'
 #  responses:
 #    200:
 #      description: GraphQL result (errors are inside the body)
