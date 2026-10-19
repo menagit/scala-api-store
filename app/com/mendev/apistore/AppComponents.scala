@@ -19,6 +19,7 @@ import com.mendev.apistore.notifications.application.{Recipient, RecipientDirect
 import com.mendev.apistore.ordering.OrderingComponents
 import com.mendev.apistore.ordering.application.OrderIdGenerator
 import java.util.UUID
+import controllers.AssetsComponents
 
 class AppComponents(context: Context)
   extends BuiltInComponentsFromContext(context)
@@ -31,6 +32,7 @@ class AppComponents(context: Context)
     with OrderingComponents
     with NotificationsComponents
     with GraphQLComponents
+    with AssetsComponents
  {
 
   // Run the migrations now, before the app takes requests (was asEagerSingleton).
@@ -48,7 +50,7 @@ class AppComponents(context: Context)
     (publicId, conn) => getUserContactUseCase.executeIn(publicId, conn).map(_.map(c => Recipient(c.email, c.firstName)))
 
   // Arguments follow the order in conf/routes: error handler, then each controller once.
-  lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController, productController, graphQLController)
+  lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController, productController, graphQLController,assets)
 
   override lazy val corsConfig: CORSConfig = CORSConfig(
     allowedOrigins = CORSConfig.Origins.Matching(appConfig.cors.origins.toSet),

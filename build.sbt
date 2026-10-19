@@ -3,7 +3,7 @@ organization := "com.mena"
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file(".")).enablePlugins(PlayScala,SwaggerPlugin)
 
 scalaVersion := "2.13.18"
 
@@ -18,6 +18,9 @@ scalacOptions ++= Seq(
 
 Test / parallelExecution := false
 
+swaggerDomainNameSpaces := Seq("com.mendev.apistore")
+swaggerV3 := true
+
 libraryDependencies ++= Seq(
   jdbc,
   "com.lucidchart" %% "relate" % "5.1.0",
@@ -31,6 +34,7 @@ libraryDependencies ++= Seq(
   "org.playframework" %% "play-mailer" % "10.1.0",
   "org.sangria-graphql" %% "sangria"                  % "4.2.19",
   "org.sangria-graphql" %% "sangria-play-json-play30" % "2.0.3",
+  "org.webjars" % "swagger-ui" % "5.10.3",
   "com.dimafeng" %% "testcontainers-scala-scalatest" % "0.44.1" % Test,
   "com.dimafeng" %% "testcontainers-scala-mysql" % "0.44.1" % Test,
   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test
