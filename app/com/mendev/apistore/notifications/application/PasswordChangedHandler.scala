@@ -2,12 +2,13 @@ package com.mendev.apistore.notifications.application
 
 import com.mendev.apistore.shared.error.AppError
 
+import java.sql.Connection
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 class PasswordChangedHandler extends EventHandler[PasswordChangedEvent] {
 
-  override def handle(event: PasswordChangedEvent): Either[AppError, List[NewDelivery]] =
+  override def handle(event: PasswordChangedEvent, conn: Connection): Either[AppError, List[NewDelivery]] =
     Right(
       List(
         NewDelivery(

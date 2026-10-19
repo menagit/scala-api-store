@@ -4,6 +4,7 @@ import com.mendev.apistore.notifications.application.{EventDispatcher, EventHand
 import com.mendev.apistore.shared.error.AppError
 import play.api.libs.json.{Json, Reads}
 
+import java.sql.Connection
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -11,12 +12,12 @@ import scala.util.control.NonFatal
 // The type parameter E is hidden here, so routes for different events fit in one list.
 final class EventRoute private (
                                  val eventType: String,
-                                 val run: String => Either[AppError, List[NewDelivery]]
+                                 val run: (String, Connection) => Either[AppError, List[NewDelivery]]
                                )
 
 object EventRoute {
   def apply[E: Reads](eventType: String, handler: EventHandler[E]): EventRoute =
-    new EventRoute(eventType, payload => read[E](payload).flatMap(handler.handle))
+    new EventRoute(eventType, (payload, conn) => read[E](payload).flatMap(handler.handle(_, conn)))
 
   // The error never contains the payload: it has personal data.
   private def read[E: Reads](payload: String): Either[AppError, E] =
@@ -35,10 +36,10 @@ class RoutingEventDispatcher(routes: List[EventRoute]) extends EventDispatcher {
 
   private val byType: Map[String, EventRoute] = routes.map(r => r.eventType -> r).toMap
 
-  override def fanOut(event: StoredEvent): Option[Either[AppError, List[NewDelivery]]] =
+  override def fanOut(event: StoredEvent, conn: Connection): Option[Either[AppError, List[NewDelivery]]] =
     byType.get(event.eventType).map { route =>
       //One handler bug must not roll back the whole batch
-      try route.run(event.payload)
+      try route.run(event.payload, conn)
       catch { case NonFatal(_) => Left(AppError.Unexpected("Event handler failed")) }
     }
 }

@@ -9,4 +9,6 @@ trait StockReservation {
   def findProducts(ids: Seq[Long], conn: Connection): Either[AppError, List[CheckoutProduct]]
 
   def take(productId: Long, quantity: Int, now: Instant, conn: Connection): Either[AppError, Unit]
+
+  def giveBack(productId: Long, quantity: Int, now: Instant, conn: Connection): Either[AppError, Unit]
 }

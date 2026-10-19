@@ -1,7 +1,7 @@
 package com.mendev.apistore.notifications
 
 import com.mendev.apistore.notifications.application.*
-import com.mendev.apistore.notifications.infrastructure.events.{EventRoute, RoutingEventDispatcher,PasswordResetRequestedEventReads}
+import com.mendev.apistore.notifications.infrastructure.events.{EventRoute, OrderStatusChangedEventReads, PasswordResetRequestedEventReads, RoutingEventDispatcher}
 import com.mendev.apistore.notifications.infrastructure.jobs.OutboxPollerJob
 import com.mendev.apistore.notifications.infrastructure.mail.{PlayMailerEmailSender, TwirlTemplateRenderer}
 import com.mendev.apistore.notifications.infrastructure.persistence.{RelateDeliveryRepository, RelateEventRepository}
@@ -27,11 +27,16 @@ trait NotificationsComponents extends MailerComponents {
 
   lazy val passwordResetRequestedHandler: PasswordResetRequestedHandler = new PasswordResetRequestedHandler
 
+  def recipientDirectory: RecipientDirectory
+
+  lazy val orderStatusChangedHandler: OrderStatusChangedHandler = new OrderStatusChangedHandler(recipientDirectory)
+
   lazy val eventDispatcher: EventDispatcher =
     new RoutingEventDispatcher(
       List(
         EventRoute("PasswordChanged", passwordChangedHandler),
-        EventRoute("PasswordResetRequested", passwordResetRequestedHandler)(PasswordResetRequestedEventReads.reads)
+        EventRoute("PasswordResetRequested", passwordResetRequestedHandler)(PasswordResetRequestedEventReads.reads),
+        EventRoute("OrderStatusChanged", orderStatusChangedHandler)(OrderStatusChangedEventReads.reads)
       )
     )
 

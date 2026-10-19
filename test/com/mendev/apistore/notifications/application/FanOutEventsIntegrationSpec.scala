@@ -7,6 +7,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import java.sql.Connection
 import java.time.{Clock, Instant, ZoneOffset}
 import scala.concurrent.Await
 import scala.concurrent.duration.*
@@ -20,7 +21,7 @@ class FanOutEventsIntegrationSpec extends AnyWordSpec with Matchers with BeforeA
 
   // The event type decides what the fake handler does.
   private val dispatcher = new EventDispatcher {
-    override def fanOut(event: StoredEvent): Option[Either[AppError, List[NewDelivery]]] =
+    override def fanOut(event: StoredEvent, conn: Connection): Option[Either[AppError, List[NewDelivery]]] =
       event.eventType match {
         case "GOOD" => Some(Right(List(oneDelivery)))
         case "BAD"  => Some(Left(AppError.Validation("bad payload")))

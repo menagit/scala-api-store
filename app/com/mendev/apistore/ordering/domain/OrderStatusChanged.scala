@@ -2,7 +2,7 @@ package com.mendev.apistore.ordering.domain
 
 import com.mendev.apistore.shared.events.DomainEvent
 
-import java.time.Instant
+import java.time.{Instant, LocalDate}
 import java.util.UUID
 
 final case class OrderStatusChanged(
@@ -11,6 +11,8 @@ final case class OrderStatusChanged(
   from: Option[OrderStatus],
   to: OrderStatus,
   changedBy: ChangedBy,
+  trackingNumber: Option[TrackingNumber],
+  estimatedDelivery: Option[LocalDate],
   at: Instant
 ) extends DomainEvent {
 
@@ -23,7 +25,9 @@ final case class OrderStatusChanged(
       "to"            -> text(to),
       "changedBy"     -> changedByText,
       "at"            -> at.toString
-    ) ++ from.map(status => "from" -> text(status))
+    ) ++ from.map(status => "from" -> text(status)) ++
+      trackingNumber.map(t => "trackingNumber" -> t.value) ++
+      estimatedDelivery.map(d => "estimatedDelivery" -> d.toString)
 
   override def toString: String = s"OrderStatusChanged($orderPublicId)"
 
@@ -38,5 +42,14 @@ final case class OrderStatusChanged(
 
 object OrderStatusChanged {
   def of(order: Order, entry: OrderStatusHistoryEntry): OrderStatusChanged =
-    OrderStatusChanged(order.publicId, order.userPublicId, entry.oldStatus, entry.newStatus, entry.changedBy, entry.createdAt)
+    OrderStatusChanged(
+      order.publicId,
+      order.userPublicId,
+      entry.oldStatus,
+      entry.newStatus,
+      entry.changedBy,
+      order.trackingNumber,
+      order.estimatedDelivery,
+      entry.createdAt
+    )
 }
