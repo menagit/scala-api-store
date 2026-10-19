@@ -43,6 +43,17 @@ class RelateOrderRepository extends OrderRepository {
     Right(entity.map(e => OrderEntity.toDomain(e, findItems(e.id, conn))))
   }
 
+  override def lockByPublicId(publicId: UUID, conn: Connection): Either[AppError, Option[Order]] = {
+    val entity = sql"""
+      SELECT id, public_id, user_public_id, status, total, tracking_number, estimated_delivery, created_at, updated_at
+      FROM ordering_order
+      WHERE public_id = ${UuidBytes.toBytes(publicId)}
+      FOR UPDATE
+    """.asSingleOption(OrderEntity.fromRow)(conn)
+
+    Right(entity.map(e => OrderEntity.toDomain(e, findItems(e.id, conn))))
+  }
+
   override def findPageByUser(userPublicId: UUID, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Order]] = {
     val entities = sql"""
       SELECT id, public_id, user_public_id, status, total, tracking_number, estimated_delivery, created_at, updated_at
@@ -60,6 +71,26 @@ class RelateOrderRepository extends OrderRepository {
       SELECT COUNT(*) AS total
       FROM ordering_order
       WHERE user_public_id = ${UuidBytes.toBytes(userPublicId)}
+    """.asSingle(_.long("total"))(conn)
+
+    Right(total)
+  }
+
+  override def findPage(limit: Int, offset: Long, conn: Connection): Either[AppError, List[Order]] = {
+    val entities = sql"""
+      SELECT id, public_id, user_public_id, status, total, tracking_number, estimated_delivery, created_at, updated_at
+      FROM ordering_order
+      ORDER BY created_at DESC, id DESC
+      LIMIT $limit OFFSET $offset
+    """.asList(OrderEntity.fromRow)(conn)
+
+    Right(withItems(entities, conn))
+  }
+
+  override def countAll(conn: Connection): Either[AppError, Long] = {
+    val total = sql"""
+      SELECT COUNT(*) AS total
+      FROM ordering_order
     """.asSingle(_.long("total"))(conn)
 
     Right(total)

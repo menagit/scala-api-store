@@ -11,9 +11,15 @@ trait OrderRepository {
 
   def findByPublicId(publicId: UUID, conn: Connection): Either[AppError, Option[Order]]
 
+  def lockByPublicId(publicId: UUID, conn: Connection): Either[AppError, Option[Order]]
+
   def findPageByUser(userPublicId: UUID, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Order]]
 
   def countByUser(userPublicId: UUID, conn: Connection): Either[AppError, Long]
+
+  def findPage(limit: Int, offset: Long, conn: Connection): Either[AppError, List[Order]]
+
+  def countAll(conn: Connection): Either[AppError, Long]
 
   def updateStatus(order: Order, conn: Connection): Either[AppError, Unit]
 }

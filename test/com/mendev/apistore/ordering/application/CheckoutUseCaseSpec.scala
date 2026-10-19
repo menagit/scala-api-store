@@ -1,6 +1,6 @@
 package com.mendev.apistore.ordering.application
 
-import com.mendev.apistore.catalog.application.{GetProductSummariesUseCase, TakeStockUseCase}
+import com.mendev.apistore.catalog.application.{GetProductSummariesUseCase, ReturnStockUseCase, TakeStockUseCase}
 import com.mendev.apistore.catalog.infrastructure.persistence.{RelateProductRepository, RelateStockRepository}
 import com.mendev.apistore.ordering.domain.OrderStatus.Confirmed
 import com.mendev.apistore.ordering.infrastructure.cart.InProcessCartSource
@@ -37,7 +37,8 @@ class CheckoutUseCaseSpec extends AnyWordSpec with Matchers with EitherValues wi
     new InProcessCartSource(new LockCartItemsUseCase(cartRepo), new ClearCartUseCase(cartRepo)),
     new InProcessStockReservation(
       new GetProductSummariesUseCase(new RelateProductRepository, TestDatabase.txRunner),
-      new TakeStockUseCase(new RelateStockRepository)
+      new TakeStockUseCase(new RelateStockRepository),
+      new ReturnStockUseCase(new RelateStockRepository)
     ),
     new RelateOrderRepository,
     new RelateOrderStatusHistoryRepository,
