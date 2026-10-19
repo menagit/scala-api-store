@@ -112,6 +112,20 @@ class RelateOrderRepository extends OrderRepository {
     }
   }
 
+  override def existsOpenOrderWithProduct(productId: Long, conn: Connection): Either[AppError, Boolean] = {
+    val open  = List(OrderStatus.Pending, OrderStatus.Confirmed, OrderStatus.Shipped).map(OrderEntity.statusToText)
+    val found = sql"""
+      SELECT EXISTS(
+        SELECT 1
+        FROM ordering_order_item i
+        JOIN ordering_order o ON o.id = i.order_id
+        WHERE i.product_id = $productId AND o.status IN ($open)
+      ) AS found
+    """.asSingle(_.bool("found"))(conn)
+
+    Right(found)
+  }
+
   private def withItems(entities: List[OrderEntity], conn: Connection): List[Order] = entities match {
     case Nil => Nil
     case _ =>

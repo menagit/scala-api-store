@@ -2,10 +2,11 @@ package com.mendev.apistore.catalog.infrastructure.persistence
 
 import com.lucidchart.relate.*
 import com.mendev.apistore.catalog.application.{ProductRepository, ProductSort, SortOrder}
-import com.mendev.apistore.catalog.domain.{NewProduct, Product}
+import com.mendev.apistore.catalog.domain.{NewProduct, Product, ProductStatus}
 import com.mendev.apistore.shared.error.AppError
 
 import java.sql.Connection
+import java.time.Instant
 
 class RelateProductRepository extends ProductRepository {
 
@@ -62,6 +63,43 @@ class RelateProductRepository extends ProductRepository {
     """.asSingle(_.long("total"))(conn)
 
     Right(total)
+  }
+
+  override def lockById(id: Long, conn: Connection): Either[AppError, Option[Product]] = {
+    val entity = sql"""
+      SELECT id, name, description, category_id, price, discount_percent, stock, status, deleted_at, created_at, updated_at
+      FROM catalog_product
+      WHERE id = $id
+      FOR UPDATE
+    """.asSingleOption(ProductEntity.fromRow)(conn)
+
+    Right(entity.map(ProductEntity.toDomain))
+  }
+
+  override def updateStatus(id: Long, status: ProductStatus, now: Instant, conn: Connection): Either[AppError, Unit] = {
+    val updated = sql"""
+      UPDATE catalog_product
+      SET status = ${ProductEntity.statusToText(status)}, updated_at = $now
+      WHERE id = $id
+    """.executeUpdate()(conn)
+
+    updated match {
+      case 0 => throw new IllegalStateException(s"Product $id not found for status update")
+      case _ => Right(())
+    }
+  }
+
+  override def markDeleted(id: Long, now: Instant, conn: Connection): Either[AppError, Unit] = {
+    val updated = sql"""
+      UPDATE catalog_product
+      SET deleted_at = $now, updated_at = $now
+      WHERE id = $id
+    """.executeUpdate()(conn)
+
+    updated match {
+      case 0 => throw new IllegalStateException(s"Product $id not found for delete")
+      case _ => Right(())
+    }
   }
 
   private def orderBy(sort: ProductSort, order: SortOrder): String = {
