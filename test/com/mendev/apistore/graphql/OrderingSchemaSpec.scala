@@ -4,10 +4,11 @@ import com.mendev.apistore.shared.AppComponentsSuite
 import com.mendev.apistore.shared.db.TestDatabase
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsNull, JsValue, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 
+import java.time.Instant
 import java.util.UUID
 
 class OrderingSchemaSpec extends PlaySpec with AppComponentsSuite with BeforeAndAfterEach {
@@ -34,6 +35,16 @@ class OrderingSchemaSpec extends PlaySpec with AppComponentsSuite with BeforeAnd
     signUp("checkout-manager@apistore.com")
     TestDatabase.update("UPDATE identity_user SET role = 'MANAGER' WHERE email = 'checkout-manager@apistore.com'")
     signIn("checkout-manager@apistore.com")
+  }
+
+  private lazy val otherClientToken: String = {
+    signUp("orders-other-client@apistore.com")
+    signIn("orders-other-client@apistore.com")
+  }
+
+  private def placeOrder(token: String, productId: Long): String = {
+    graphql(token, s"mutation { addToCart(productId: $productId, quantity: 1) { total } }")
+    (graphql(token, "mutation { checkout { id } }") \ "data" \ "checkout" \ "id").as[String]
   }
 
   private def signUp(email: String): Unit = {
@@ -77,6 +88,55 @@ class OrderingSchemaSpec extends PlaySpec with AppComponentsSuite with BeforeAnd
 
     "answer FORBIDDEN to a manager" in {
       val json = graphql(managerToken, "mutation { checkout { id } }")
+
+      (json \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "FORBIDDEN"
+    }
+  }
+
+  "My orders in GraphQL" must {
+    "list the client's orders newest first, one page at a time" in {
+      insertProduct(1)
+      placeOrder(clientToken, 1)
+      val second = placeOrder(clientToken, 1)
+      val third  = placeOrder(clientToken, 1)
+      placeOrder(otherClientToken, 1)
+
+      val page = graphql(clientToken, "query { myOrders(page: 1, size: 2) { totalItems totalPages items { id items { productId quantity } } } }") \ "data" \ "myOrders"
+
+      (page \ "totalItems").as[Long] mustBe 3L
+      (page \ "totalPages").as[Long] mustBe 2L
+      (page \ "items").as[List[JsValue]].map(o => (o \ "id").as[String]) mustBe List(third, second)
+      (page \ "items" \ 0 \ "items" \ 0 \ "productId").as[Long] mustBe 1L
+      (page \ "items" \ 1 \ "items" \ 0 \ "quantity").as[Int] mustBe 1
+    }
+
+    "return the client's own order" in {
+      insertProduct(1)
+      val id = placeOrder(clientToken, 1)
+
+      val order = graphql(clientToken, s"""query { order(id: "$id") { id status trackingNumber estimatedDelivery updatedAt items { productId quantity } } }""") \ "data" \ "order"
+
+      (order \ "id").as[String] mustBe id
+      (order \ "status").as[String] mustBe "CONFIRMED"
+      (order \ "trackingNumber").toOption mustBe Some(JsNull)
+      (order \ "estimatedDelivery").toOption mustBe Some(JsNull)
+      Instant.parse((order \ "updatedAt").as[String])
+      (order \ "items" \ 0 \ "productId").as[Long] mustBe 1L
+    }
+
+    "answer NOT_FOUND for another client's order and for an id that is not a UUID" in {
+      insertProduct(1)
+      val othersId = placeOrder(otherClientToken, 1)
+
+      val others = graphql(clientToken, s"""query { order(id: "$othersId") { id } }""")
+      val badId  = graphql(clientToken, """query { order(id: "not-a-uuid") { id } }""")
+
+      (others \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "NOT_FOUND"
+      (badId \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "NOT_FOUND"
+    }
+
+    "answer FORBIDDEN to a manager" in {
+      val json = graphql(managerToken, "query { myOrders { totalItems } }")
 
       (json \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "FORBIDDEN"
     }

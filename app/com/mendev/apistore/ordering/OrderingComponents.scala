@@ -1,7 +1,7 @@
 package com.mendev.apistore.ordering
 
 import com.mendev.apistore.catalog.application.{GetProductSummariesUseCase, TakeStockUseCase}
-import com.mendev.apistore.ordering.application.{CartSource, CheckoutUseCase, OrderIdGenerator, OrderRepository, OrderStatusHistoryRepository, StockReservation}
+import com.mendev.apistore.ordering.application.{CartSource, CheckoutUseCase, GetMyOrderUseCase, ListMyOrdersUseCase, OrderIdGenerator, OrderRepository, OrderStatusHistoryRepository, StockReservation}
 import com.mendev.apistore.ordering.infrastructure.cart.InProcessCartSource
 import com.mendev.apistore.ordering.infrastructure.catalog.InProcessStockReservation
 import com.mendev.apistore.ordering.infrastructure.persistence.{RelateOrderRepository, RelateOrderStatusHistoryRepository}
@@ -26,4 +26,7 @@ trait OrderingComponents {
 
   lazy val checkoutUseCase: CheckoutUseCase =
     new CheckoutUseCase(cartSource, stockReservation, orderRepository, orderStatusHistoryRepository, eventPublisher, orderIdGenerator, txRunner, clock)
+
+  lazy val listMyOrdersUseCase: ListMyOrdersUseCase = new ListMyOrdersUseCase(orderRepository, txRunner)
+  lazy val getMyOrderUseCase: GetMyOrderUseCase     = new GetMyOrderUseCase(orderRepository, txRunner)
 }

@@ -17,7 +17,7 @@ class GraphQLSchema(shopping: ShoppingSchema, ordering: OrderingSchema) {
     "Query",
     fields[GraphQLContext, Unit](
       Field("me", MeType, resolve = _.ctx.actor)
-    ) ++ shopping.queryFields
+    ) ++ shopping.queryFields ++ ordering.queryFields
   )
 
   private val MutationType: ObjectType[GraphQLContext, Unit] =
