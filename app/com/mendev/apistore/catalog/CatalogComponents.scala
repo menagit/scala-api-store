@@ -1,7 +1,7 @@
 package com.mendev.apistore.catalog
 
-import com.mendev.apistore.catalog.application.{CategoryRepository, CreateProductUseCase, GetProductSummariesUseCase, GetProductUseCase, ListProductsUseCase, ProductRepository, ProductStatusHistoryRepository}
-import com.mendev.apistore.catalog.infrastructure.persistence.{RelateCategoryRepository, RelateProductRepository, RelateProductStatusHistoryRepository}
+import com.mendev.apistore.catalog.application.{CategoryRepository, CreateProductUseCase, GetProductSummariesUseCase, GetProductUseCase, ListProductsUseCase, ProductRepository, ProductStatusHistoryRepository, StockRepository, TakeStockUseCase}
+import com.mendev.apistore.catalog.infrastructure.persistence.{RelateCategoryRepository, RelateProductRepository, RelateProductStatusHistoryRepository, RelateStockRepository}
 import com.mendev.apistore.catalog.infrastructure.web.ProductController
 import com.mendev.apistore.shared.actions.AuthenticatedAction
 import com.mendev.apistore.shared.SharedComponents
@@ -13,6 +13,7 @@ trait CatalogComponents {
   lazy val productRepository: ProductRepository   = new RelateProductRepository
   lazy val categoryRepository: CategoryRepository = new RelateCategoryRepository
   lazy val productStatusHistoryRepository: ProductStatusHistoryRepository = new RelateProductStatusHistoryRepository
+  lazy val stockRepository: StockRepository = new RelateStockRepository
 
   def authenticatedAction: AuthenticatedAction
 
@@ -27,6 +28,8 @@ trait CatalogComponents {
 
   lazy val getProductSummariesUseCase: GetProductSummariesUseCase =
     new GetProductSummariesUseCase(productRepository, txRunner)
+
+  lazy val takeStockUseCase: TakeStockUseCase = new TakeStockUseCase(stockRepository)
 
   lazy val productController: ProductController =
     new ProductController(controllerComponents, createProductUseCase, listProductsUseCase, getProductUseCase, authenticatedAction, roleAction)(executionContext)

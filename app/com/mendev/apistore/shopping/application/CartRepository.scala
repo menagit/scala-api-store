@@ -21,4 +21,6 @@ trait CartRepository {
   def removeItem(cartId: Long, productId: Long, conn: Connection): Either[AppError, Unit]
 
   def deleteCartIfEmpty(cartId: Long, conn: Connection): Either[AppError, Unit]
+
+  def deleteCart(userPublicId: UUID, conn: Connection): Either[AppError, Unit]
 }
