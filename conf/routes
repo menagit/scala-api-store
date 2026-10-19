@@ -6,7 +6,7 @@
 ###
 #  summary: Health check
 #  tags:
-#    - Health
+#  - Health
 #  responses:
 #    200:
 #      description: Service is up
@@ -15,20 +15,28 @@ GET   /health                       com.mendev.apistore.shared.health.web.Health
 
 ###
 #  summary: Sign up a client
+#  description: Creates a client account. Managers are not created here.
 #  tags:
-#    - Auth
+#  - Auth
 #  requestBody:
 #    required: true
 #    content:
 #      application/json:
 #        schema:
 #          type: object
-#          required: [email, password, firstName, lastName]
+#          required:
+#          - email
+#          - password
+#          - firstName
+#          - lastName
 #          properties:
-#            email: {type: string}
-#            password: {type: string}
-#            firstName: {type: string}
-#            lastName: {type: string}
+#            email: &id001
+#              type: string
+#            password:
+#              type: string
+#              description: 8 to 16 characters
+#            firstName: *id001
+#            lastName: *id001
 #  responses:
 #    201:
 #      description: Client created
@@ -37,9 +45,9 @@ GET   /health                       com.mendev.apistore.shared.health.web.Health
 #          schema:
 #            type: object
 #            properties:
-#              publicId: {type: string}
+#              publicId: *id001
 #    400:
-#      description: Validation error
+#      description: Validation error (all field errors are returned together)
 #      content:
 #        application/json:
 #          schema:
@@ -48,59 +56,77 @@ GET   /health                       com.mendev.apistore.shared.health.web.Health
 POST  /auth/sign-up                 com.mendev.apistore.identity.infrastructure.web.AuthController.register
 
 ###
-#  summary: Sign in (rate limited, 5 per minute per IP)
+#  summary: Sign in
+#  description: 'Rate limited: 5 requests per minute per IP. The access token is in the body. The refresh token is in an HttpOnly cookie.'
 #  tags:
-#    - Auth
+#  - Auth
 #  requestBody:
 #    required: true
 #    content:
 #      application/json:
 #        schema:
 #          type: object
-#          required: [email, password]
+#          required:
+#          - email
+#          - password
 #          properties:
-#            email: {type: string}
-#            password: {type: string}
+#            email: &id001
+#              type: string
+#            password: *id001
 #  responses:
 #    200:
-#      description: Access token in the body, refresh token in an HttpOnly cookie
+#      description: Signed in
 #      content:
 #        application/json:
 #          schema:
-#            type: object
-#            properties:
-#              access_token: {type: string}
-#              token_type: {type: string}
-#              expires_in: {type: integer}
+#            $ref: '#/components/schemas/TokenResponse'
 #    400:
-#      description: Validation error
+#      description: Validation error (all field errors are returned together)
 #      content:
 #        application/json:
 #          schema:
 #            $ref: '#/components/schemas/ErrorResponse'
 #    401:
 #      description: Wrong email or password
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 #    429:
 #      description: Too many attempts
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 ###
 POST  /auth/sign-in                 com.mendev.apistore.identity.infrastructure.web.AuthController.login
 
 ###
-#  summary: Get a new access token using the refresh cookie (no body)
+#  summary: Get a new access token with the refresh cookie (no body)
+#  description: The browser sends the refresh cookie. The refresh token is rotated.
 #  tags:
-#    - Auth
+#  - Auth
 #  responses:
 #    200:
-#      description: New access token, refresh cookie rotated
+#      description: New access token, new refresh cookie
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/TokenResponse'
 #    401:
 #      description: Missing, invalid or expired refresh token
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 ###
 POST  /auth/refresh                 com.mendev.apistore.identity.infrastructure.web.AuthController.refresh
 
 ###
-#  summary: Sign out (clears the refresh cookie)
+#  summary: Sign out
+#  description: Clears the refresh cookie.
 #  tags:
-#    - Auth
+#  - Auth
 #  responses:
 #    204:
 #      description: Signed out
@@ -110,9 +136,9 @@ POST  /auth/sign-out                com.mendev.apistore.identity.infrastructure.
 ###
 #  summary: Who am I
 #  tags:
-#    - Auth
+#  - Auth
 #  security:
-#    - bearerAuth: []
+#  - bearerAuth: []
 #  responses:
 #    200:
 #      description: The signed-in user
@@ -121,224 +147,389 @@ POST  /auth/sign-out                com.mendev.apistore.identity.infrastructure.
 #          schema:
 #            type: object
 #            properties:
-#              publicId: {type: string}
-#              role: {type: string, enum: [CLIENT, MANAGER]}
+#              publicId:
+#                type: string
+#              role:
+#                type: string
+#                enum:
+#                - CLIENT
+#                - MANAGER
 #    401:
 #      description: Missing or invalid token
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 ###
 GET   /me                           com.mendev.apistore.identity.infrastructure.web.MeController.me
 
 ###
-#  summary: Change password (clears the refresh cookie)
+#  summary: Change password
+#  description: The refresh cookie is cleared, so sign in again afterwards.
 #  tags:
-#    - Auth
+#  - Auth
 #  security:
-#    - bearerAuth: []
+#  - bearerAuth: []
 #  requestBody:
 #    required: true
 #    content:
 #      application/json:
 #        schema:
 #          type: object
-#          required: [currentPassword, newPassword]
+#          required:
+#          - currentPassword
+#          - newPassword
 #          properties:
-#            currentPassword: {type: string}
-#            newPassword: {type: string}
+#            currentPassword:
+#              type: string
+#            newPassword:
+#              type: string
+#              description: 8 to 16 characters
 #  responses:
 #    204:
 #      description: Password changed
 #    400:
-#      description: Validation error
+#      description: Validation error (all field errors are returned together)
 #      content:
 #        application/json:
 #          schema:
 #            $ref: '#/components/schemas/ErrorResponse'
 #    401:
 #      description: Missing or invalid token, or wrong current password
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 ###
 POST  /auth/change-password         com.mendev.apistore.identity.infrastructure.web.AuthController.changePassword
 
 ###
-#  summary: Ask for a password reset email (always 202 for a valid request)
+#  summary: Ask for a password reset email
+#  description: 'Always 202 for a valid request, whether or not the email exists. Rate limited: 5 per minute per IP.'
 #  tags:
-#    - Auth
+#  - Auth
 #  requestBody:
 #    required: true
 #    content:
 #      application/json:
 #        schema:
 #          type: object
-#          required: [email]
+#          required:
+#          - email
 #          properties:
-#            email: {type: string}
+#            email:
+#              type: string
 #  responses:
 #    202:
-#      description: Accepted, whether or not the email exists
+#      description: Accepted
 #    400:
-#      description: Validation error
+#      description: Validation error (all field errors are returned together)
 #      content:
 #        application/json:
 #          schema:
 #            $ref: '#/components/schemas/ErrorResponse'
 #    429:
 #      description: Too many attempts
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 ###
 POST  /auth/forgot-password         com.mendev.apistore.identity.infrastructure.web.AuthController.forgotPassword
 
 ###
 #  summary: Set a new password with the reset token
+#  description: 'Rate limited: 5 per minute per IP.'
 #  tags:
-#    - Auth
+#  - Auth
 #  requestBody:
 #    required: true
 #    content:
 #      application/json:
 #        schema:
 #          type: object
-#          required: [token, newPassword]
+#          required:
+#          - token
+#          - newPassword
 #          properties:
-#            token: {type: string}
-#            newPassword: {type: string}
+#            token:
+#              type: string
+#              description: The token from the reset email
+#            newPassword:
+#              type: string
+#              description: 8 to 16 characters
 #  responses:
 #    204:
 #      description: Password reset
 #    400:
-#      description: Validation error
+#      description: Validation error (all field errors are returned together)
 #      content:
 #        application/json:
 #          schema:
 #            $ref: '#/components/schemas/ErrorResponse'
 #    429:
 #      description: Too many attempts
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 ###
 POST  /auth/reset-password          com.mendev.apistore.identity.infrastructure.web.AuthController.resetPassword
 
 ###
-#  summary: Create a product (manager only). Created DISABLED unless status is ACTIVE.
+#  summary: Create a product (manager only)
+#  description: The product is created DISABLED unless status is ACTIVE. Disabled products are not visible to clients.
 #  tags:
-#    - Products
+#  - Products
 #  security:
-#    - bearerAuth: []
+#  - bearerAuth: []
 #  requestBody:
 #    required: true
 #    content:
 #      application/json:
 #        schema:
 #          type: object
+#          required:
+#          - name
+#          - description
+#          - categoryId
+#          - price
+#          - discountPercent
+#          - stock
 #          properties:
-#            name: {type: string}
-#            description: {type: string}
-#            categoryId: {type: integer, format: int64}
-#            price: {type: number}
-#            discountPercent: {type: number}
-#            stock: {type: integer}
-#            status: {type: string, enum: [ACTIVE, DISABLED]}
+#            name:
+#              type: string
+#              description: 1 to 200 characters
+#            description:
+#              type: string
+#              description: At most 2000 characters, may be empty
+#            categoryId:
+#              type: integer
+#              format: int64
+#              description: An existing category id
+#            price:
+#              type: number
+#              description: Above 0, at most 2 decimals
+#            discountPercent:
+#              type: number
+#              description: 0 to 99.99
+#            stock:
+#              type: integer
+#              description: 0 or more
+#            status:
+#              type: string
+#              enum:
+#              - ACTIVE
+#              - DISABLED
+#              description: Optional, default DISABLED
 #  responses:
 #    201:
 #      description: Product created
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/Product'
 #    400:
-#      description: Validation error
+#      description: Validation error (all field errors are returned together)
 #      content:
 #        application/json:
 #          schema:
 #            $ref: '#/components/schemas/ErrorResponse'
 #    401:
 #      description: Missing or invalid token
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 #    403:
 #      description: Not a manager
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 ###
 POST  /products                     com.mendev.apistore.catalog.infrastructure.web.ProductController.create
 
 ###
-#  summary: List products (public, active only)
+#  summary: List products (public)
+#  description: Only ACTIVE products that are not deleted. Out-of-range page or size values are corrected. An unknown sort or order is a 400.
 #  tags:
-#    - Products
+#  - Products
 #  parameters:
-#    - {name: page, in: query, schema: {type: integer}}
-#    - {name: size, in: query, schema: {type: integer}}
-#    - {name: sort, in: query, schema: {type: string, enum: [price, name, createdAt]}}
-#    - {name: order, in: query, schema: {type: string, enum: [asc, desc]}}
+#  - name: page
+#    in: query
+#    description: Starts at 1, default 1
+#    schema:
+#      type: integer
+#  - name: size
+#    in: query
+#    description: Default 20, maximum 100
+#    schema:
+#      type: integer
+#  - name: sort
+#    in: query
+#    description: Default createdAt. price sorts by the discounted price
+#    schema:
+#      type: string
+#      enum:
+#      - price
+#      - name
+#      - createdAt
+#  - name: order
+#    in: query
+#    description: Default desc
+#    schema:
+#      type: string
+#      enum:
+#      - asc
+#      - desc
 #  responses:
 #    200:
-#      description: A page of products (items, page, size, totalItems, totalPages)
+#      description: A page of products
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ProductPage'
 #    400:
-#      description: Invalid query value
+#      description: A value that cannot be understood (field errors are returned together)
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 ###
 GET   /products                     com.mendev.apistore.catalog.infrastructure.web.ProductController.list
 
 ###
 #  summary: Get one product (public)
+#  description: Missing, disabled and deleted products all return 404.
 #  tags:
-#    - Products
+#  - Products
 #  responses:
 #    200:
-#      description: The product
+#      description: The product, with an images list that is empty for now
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/PublicProduct'
 #    404:
 #      description: Product not found
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 ###
 GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.web.ProductController.detail(id: Long)
 
 ###
-#  summary: GraphQL endpoint (cart, orders, manager actions). Needs a token.
+#  summary: 'GraphQL endpoint: cart, orders and manager actions (12 operations)'
+#  description: |-
+#    All GraphQL operations go through this one URL. Send a JSON body with a query string. Pick an operation from the Examples dropdown.
+#
+#    Every call needs a bearer token. Role checks run per operation: a signed-in user with the wrong role gets a FORBIDDEN error inside the response.
+#
+#    **Queries (5)**
+#    - me: any signed-in user. Returns publicId and role.
+#    - myCart: client. The cart with its lines and total. Unavailable products stay in the list with available false and are left out of the total.
+#    - myOrders(page = 1, size = 20): client. My orders, newest first. size above 100 is reduced to 100.
+#    - order(id): client. One of my orders. A missing id, an invalid id and another client's order all return NOT_FOUND.
+#    - orders(page = 1, size = 20): manager. All orders, newest first.
+#
+#    **Mutations (7)**
+#    - addToCart(productId, quantity): client. Quantity must be above 0. The cart total for a product cannot exceed its stock.
+#    - updateCartItemQuantity(productId, quantity): client. A quantity of 0 removes the line.
+#    - removeFromCart(productId): client.
+#    - checkout: client. Needs a non-empty cart. Creates the order, takes the stock, confirms the order and empties the cart in one transaction. If any product is unavailable or short on stock the whole checkout is refused with CONFLICT.
+#    - shipOrder(id, trackingNumber, estimatedDelivery): manager. estimatedDelivery is a date, YYYY-MM-DD. trackingNumber has at most 64 characters.
+#    - deliverOrder(id): manager.
+#    - cancelOrder(id): manager. The stock goes back to the products.
+#
+#    **Order status moves:** PENDING to CONFIRMED to SHIPPED to DELIVERED, and PENDING or CONFIRMED to CANCELLED. Any other move is refused with CONFLICT. Each change sends an email to the client.
+#
+#    **Errors:** the HTTP status stays 200 once the query runs. Look at errors[].extensions.code. Codes seen: VALIDATION_ERROR, NOT_FOUND, FORBIDDEN, CONFLICT, QUERY_TOO_COMPLEX, GRAPHQL_PARSE_FAILED, GRAPHQL_VALIDATION_FAILED, INTERNAL_ERROR. Queries deeper than 15 levels or above complexity 300 are refused before they run (both limits are configurable).
 #  tags:
-#    - GraphQL
+#  - GraphQL
 #  security:
-#    - bearerAuth: []
+#  - bearerAuth: []
 #  requestBody:
 #    required: true
 #    content:
 #      application/json:
 #        schema:
 #          type: object
-#          required: [query]
+#          required:
+#          - query
 #          properties:
-#            query: {type: string}
-#            operationName: {type: string}
-#            variables: {type: object}
+#            query:
+#              type: string
+#              description: The GraphQL query or mutation text
+#            operationName:
+#              type: string
+#            variables:
+#              type: object
 #        examples:
 #          me:
-#            summary: Who am I (any signed-in user)
+#            summary: 'me: who am I (any signed-in user)'
 #            value:
-#              query: 'query { me { publicId role } }'
+#              query: query { me { publicId role } }
+#          myCart:
+#            summary: 'myCart: view my cart (client)'
+#            value:
+#              query: query { myCart { total lines { productId name quantity price discountedPrice lineTotal available } } }
 #          addToCart:
-#            summary: Add to cart (client)
+#            summary: 'addToCart: add a product to my cart (client)'
 #            value:
 #              query: 'mutation { addToCart(productId: 1, quantity: 2) { total lines { productId name quantity lineTotal } } }'
-#          myCart:
-#            summary: View my cart (client)
+#          updateCartItemQuantity:
+#            summary: 'updateCartItemQuantity: change a quantity, 0 removes the line (client)'
 #            value:
-#              query: 'query { myCart { total lines { productId name quantity price discountedPrice lineTotal available } } }'
+#              query: 'mutation { updateCartItemQuantity(productId: 1, quantity: 3) { total lines { productId name quantity lineTotal } } }'
+#          removeFromCart:
+#            summary: 'removeFromCart: remove a product from my cart (client)'
+#            value:
+#              query: 'mutation { removeFromCart(productId: 1) { total lines { productId name quantity } } }'
 #          checkout:
-#            summary: Checkout (client)
+#            summary: 'checkout: turn my cart into an order (client)'
 #            value:
-#              query: 'mutation { checkout { id status total createdAt items { productId productName unitPrice discountPercent discountedUnitPrice quantity lineTotal } } }'
+#              query: mutation { checkout { id status total createdAt items { productId productName unitPrice discountPercent discountedUnitPrice quantity lineTotal } } }
 #          myOrders:
-#            summary: My orders (client)
+#            summary: 'myOrders: my orders, newest first (client)'
 #            value:
 #              query: 'query { myOrders(page: 1, size: 20) { totalItems totalPages items { id status total createdAt } } }'
+#          order:
+#            summary: 'order: one of my orders (client)'
+#            value:
+#              query: 'query { order(id: "01a151da-a1d1-77e7-8355-a98c036410cd") { id status total trackingNumber estimatedDelivery createdAt updatedAt items { productName quantity lineTotal } } }'
 #          orders:
-#            summary: All orders (manager)
+#            summary: 'orders: all orders, newest first (manager)'
 #            value:
 #              query: 'query { orders(page: 1, size: 20) { totalItems totalPages items { id status total createdAt } } }'
 #          shipOrder:
-#            summary: Ship an order (manager)
+#            summary: 'shipOrder: mark an order shipped (manager)'
 #            value:
 #              query: 'mutation { shipOrder(id: "01a151da-a1d1-77e7-8355-a98c036410cd", trackingNumber: "TRACK-123", estimatedDelivery: "2026-10-30") { id status trackingNumber estimatedDelivery } }'
 #          deliverOrder:
-#            summary: Mark an order delivered (manager)
+#            summary: 'deliverOrder: mark an order delivered (manager)'
 #            value:
 #              query: 'mutation { deliverOrder(id: "01a151da-a1d1-77e7-8355-a98c036410cd") { id status } }'
 #          cancelOrder:
-#            summary: Cancel an order (manager, stock goes back)
+#            summary: 'cancelOrder: cancel an order, stock goes back (manager)'
 #            value:
 #              query: 'mutation { cancelOrder(id: "01a151da-a1d1-77e7-8355-a98c036410cd") { id status } }'
 #  responses:
 #    200:
-#      description: GraphQL result (errors are inside the body)
+#      description: GraphQL result. Failures are inside the body (errors[].extensions.code)
 #    400:
 #      description: Body is not valid JSON or has no query
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 #    401:
 #      description: Missing or invalid token
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
 ###
 POST  /graphql                      com.mendev.apistore.graphql.GraphQLController.execute
 

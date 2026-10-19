@@ -1,13 +1,45 @@
 openapi: 3.0.0
 info:
   title: API Store
-  description: E-commerce backend, REST and GraphQL
+  description: |-
+    E-commerce backend. REST for accounts and products, GraphQL for the cart, orders and manager actions. Everything is behind one server.
+
+    **Authentication**
+    - Sign up (POST /auth/sign-up) and sign in (POST /auth/sign-in). Sign-in returns an access token.
+    - Send it as `Authorization: Bearer YOUR_TOKEN`. Use the Authorize button here. The token lives 15 minutes.
+    - A refresh token is set as an HttpOnly cookie (30 days, path /auth). POST /auth/refresh swaps it for a new access token.
+
+    **Roles**
+    - CLIENT: signs up through the API, browses products, uses the cart, places and follows orders.
+    - MANAGER: creates products and runs orders (ship, deliver, cancel, list all). A client who calls a manager operation gets 403 on REST, FORBIDDEN in GraphQL.
+
+    **Errors (REST)**
+    - Every error has the same shape: error.code, error.message and error.details (a list of field and message for validation errors).
+    - Codes: VALIDATION_ERROR (400), UNAUTHORIZED (401), FORBIDDEN (403), NOT_FOUND (404), CONFLICT (409), TOO_MANY_REQUESTS (429), SERVICE_UNAVAILABLE (503), INTERNAL_ERROR (500).
+    - GraphQL errors use the same codes in errors[].extensions.code, and the HTTP status stays 200.
+
+    Rate limits: sign-in, forgot-password and reset-password allow 5 requests per minute per IP. The 6th gets 429.
+
+    Emails: a status change on an order sends an email to the client. In development they land in Mailpit.
   version: 1.0.0
+servers:
+  - url: http://localhost:9000
+    description: Local development
+tags:
+  - name: Health
+    description: Is the service up
+  - name: Auth
+    description: Accounts, tokens and passwords
+  - name: Products
+    description: The catalog. Reads are public, creating needs a manager
+  - name: GraphQL
+    description: 'Cart and orders: one endpoint, 12 operations, see the Examples'
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
+      description: The access_token from POST /auth/sign-in
   schemas:
     ErrorResponse:
       type: object
@@ -15,12 +47,97 @@ components:
         error:
           type: object
           properties:
-            code: {type: string}
-            message: {type: string}
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Invalid request
             details:
               type: array
               items:
                 type: object
                 properties:
-                  field: {type: string}
-                  message: {type: string}
+                  field: &id001
+                    type: string
+                  message: *id001
+    TokenResponse:
+      type: object
+      properties:
+        access_token: *id001
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          description: Seconds
+    Product:
+      type: object
+      description: Manager view of a product
+      properties:
+        id:
+          type: integer
+          format: int64
+        name: *id001
+        description: *id001
+        categoryId:
+          type: integer
+          format: int64
+        price:
+          type: number
+        discountPercent:
+          type: number
+        stock:
+          type: integer
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - DISABLED
+        createdAt: *id001
+        updatedAt: *id001
+    PublicProduct:
+      type: object
+      description: What clients see
+      properties:
+        id:
+          type: integer
+          format: int64
+        name: *id001
+        description: *id001
+        category:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            name: *id001
+        price:
+          type: number
+        discountPercent:
+          type: number
+        discountedPrice:
+          type: number
+        stock:
+          type: integer
+        inStock:
+          type: boolean
+        images:
+          type: array
+          items: *id001
+          description: Only on the detail endpoint, empty for now
+    ProductPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicProduct'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer
