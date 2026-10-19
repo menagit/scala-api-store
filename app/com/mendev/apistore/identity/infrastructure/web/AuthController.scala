@@ -131,7 +131,7 @@ class AuthController (
    * Forgot-password Endpoint: no login needed.
    * Always 202 for a valid request, whether or not the email exists.
    */
-  def forgotPassword: Action[String] = Action.async(parse.tolerantText) { request =>
+  def forgotPassword: Action[String] = (Action andThen rateLimited("forgot-password")).async(parse.tolerantText) { request =>
     val parsed: Either[AppError, ForgotPasswordCommand] =
       JsonBody.read[ForgotPasswordRequest](request.body).flatMap(toForgotPasswordCommand)
 
@@ -150,7 +150,7 @@ class AuthController (
    * Reset-password Endpoint: no login needed, the reset token is the proof.
    * Success is 204
    */
-  def resetPassword: Action[String] = Action.async(parse.tolerantText) { request =>
+  def resetPassword: Action[String] = (Action andThen rateLimited("reset-password")).async(parse.tolerantText) { request =>
     val parsed: Either[AppError, ResetPasswordCommand] =
       JsonBody.read[ResetPasswordRequest](request.body).flatMap(toResetPasswordCommand)
 

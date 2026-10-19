@@ -11,6 +11,7 @@ import play.api.BuiltInComponentsFromContext
 import play.api.http.HttpErrorHandler
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
+import play.filters.cors.{CORSComponents, CORSConfig}
 import _root_.router.Routes
 import com.mendev.apistore.notifications.NotificationsComponents
 import play.api.mvc.EssentialFilter
@@ -22,6 +23,7 @@ import java.util.UUID
 class AppComponents(context: Context)
   extends BuiltInComponentsFromContext(context)
     with HttpFiltersComponents
+    with CORSComponents
     with SharedComponents
     with IdentityComponents
     with CatalogComponents
@@ -48,7 +50,14 @@ class AppComponents(context: Context)
   // Arguments follow the order in conf/routes: error handler, then each controller once.
   lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController, productController, graphQLController)
 
-  // No Play CSRF filter: this is a token-less JSON API. 
+  override lazy val corsConfig: CORSConfig = CORSConfig(
+    allowedOrigins = CORSConfig.Origins.Matching(appConfig.cors.origins.toSet),
+    isHttpMethodAllowed = Set("GET", "POST", "OPTIONS"),
+    isHttpHeaderAllowed = Set("authorization", "content-type"),
+    supportsCredentials = false
+  )
+
+  // No Play CSRF filter: this is a token-less JSON API.
   override def httpFilters: Seq[EssentialFilter] =
-    super.httpFilters.filterNot(_ == csrfFilter)
+    corsFilter +: super.httpFilters.filterNot(_ == csrfFilter)
 }

@@ -63,6 +63,15 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
        |  $encryption
        |}""".stripMargin
 
+  private def withOrigins(value: String) =
+    s"""app {
+       |  database { host = "localhost", port = 3306, name = "api_store", user = "app", password = "db-secret" }
+       |  $mail
+       |  $jwt
+       |  $encryption
+       |  cors { allowed-origins = "$value" }
+       |}""".stripMargin
+
   "AppConfig.load" should {
 
     "load a valid configuration" in {
@@ -86,6 +95,13 @@ class AppConfigSpec extends AnyWordSpec with Matchers {
     "reject a link base URL with a trailing slash" in {
       an[IllegalArgumentException] should be thrownBy
         AppConfig.load(ConfigSource.string(withBadLinkUrl))
+    }
+
+    "reject a CORS origin that is * or not a full origin" in {
+      an[IllegalArgumentException] should be thrownBy
+        AppConfig.load(ConfigSource.string(withOrigins("*")))
+      an[IllegalArgumentException] should be thrownBy
+        AppConfig.load(ConfigSource.string(withOrigins("localhost:8000")))
     }
 
     "never show passwords when the configuration is printed" in {
