@@ -69,9 +69,15 @@ class ChangeOrderStatusUseCase(
     conn: Connection
   ): Either[AppError, Order] =
     orderRepo.lockByPublicId(id, conn).flatMap {
-      case None        => Left(notFound)
-      case Some(order) => order.changeStatus(to, by, tracking, eta, now).flatMap { case (changed, entry) => save(changed, entry, now, conn) }
+      case Some(order) if visibleTo(order, by) =>
+        order.changeStatus(to, by, tracking, eta, now).flatMap { case (changed, entry) => save(changed, entry, now, conn) }
+      case _ => Left(notFound)
     }
+
+  private def visibleTo(order: Order, by: ChangedBy): Boolean = by match {
+    case ChangedBy.Client(user) => order.userPublicId == user
+    case _                      => true
+  }
 
   private def save(order: Order, entry: OrderStatusHistoryEntry, now: Instant, conn: Connection): Either[AppError, Order] =
     orderRepo
