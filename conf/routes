@@ -421,7 +421,7 @@ GET   /products                     com.mendev.apistore.catalog.infrastructure.w
 GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.web.ProductController.detail(id: Long)
 
 ###
-#  summary: 'GraphQL endpoint: cart, orders and manager actions (12 operations)'
+#  summary: 'GraphQL endpoint: cart, orders and products (15 operations)'
 #  description: |-
 #    All GraphQL operations go through this one URL. Send a JSON body with a query string. Pick an operation from the Examples dropdown.
 #
@@ -434,7 +434,7 @@ GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.w
 #    - order(id): client. One of my orders. A missing id, an invalid id and another client's order all return NOT_FOUND.
 #    - orders(page = 1, size = 20): manager. All orders, newest first.
 #
-#    **Mutations (7)**
+#    **Mutations (10)**
 #    - addToCart(productId, quantity): client. Quantity must be above 0. The cart total for a product cannot exceed its stock.
 #    - updateCartItemQuantity(productId, quantity): client. A quantity of 0 removes the line.
 #    - removeFromCart(productId): client.
@@ -442,6 +442,9 @@ GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.w
 #    - shipOrder(id, trackingNumber, estimatedDelivery): manager. estimatedDelivery is a date, YYYY-MM-DD. trackingNumber has at most 64 characters.
 #    - deliverOrder(id): manager.
 #    - cancelOrder(id): manager. The stock goes back to the products.
+#    - disableProduct(id): manager. Hides the product from the public reads and from new carts.
+#    - enableProduct(id): manager. Shows the product again.
+#    - deleteProduct(id): manager. Soft delete. Refused with CONFLICT while the product is in an order that is PENDING, CONFIRMED or SHIPPED. A deleted or missing product is NOT_FOUND on all three product mutations.
 #
 #    **Order status moves:** PENDING to CONFIRMED to SHIPPED to DELIVERED, and PENDING or CONFIRMED to CANCELLED. Any other move is refused with CONFLICT. Each change sends an email to the client.
 #
@@ -515,6 +518,18 @@ GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.w
 #            summary: 'cancelOrder: cancel an order, stock goes back (manager)'
 #            value:
 #              query: 'mutation { cancelOrder(id: "01a151da-a1d1-77e7-8355-a98c036410cd") { id status } }'
+#          disableProduct:
+#            summary: 'disableProduct: hide a product (manager)'
+#            value:
+#              query: 'mutation { disableProduct(id: 1) { id name status deleted } }'
+#          enableProduct:
+#            summary: 'enableProduct: show a product again (manager)'
+#            value:
+#              query: 'mutation { enableProduct(id: 1) { id name status deleted } }'
+#          deleteProduct:
+#            summary: 'deleteProduct: soft-delete a product, refused while it is in an open order (manager)'
+#            value:
+#              query: 'mutation { deleteProduct(id: 1) { id name status deleted } }'
 #  responses:
 #    200:
 #      description: GraphQL result. Failures are inside the body (errors[].extensions.code)

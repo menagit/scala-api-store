@@ -33,7 +33,7 @@ tags:
   - name: Products
     description: The catalog. Reads are public, creating needs a manager
   - name: GraphQL
-    description: 'Cart and orders: one endpoint, 12 operations, see the Examples'
+    description: 'Cart, orders and products: one endpoint, 15 operations, see the Examples'
 components:
   securitySchemes:
     bearerAuth:
