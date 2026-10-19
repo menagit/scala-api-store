@@ -1,5 +1,6 @@
 package com.mendev.apistore.graphql
 
+import com.mendev.apistore.catalog.application.{ChangeProductStatusUseCase, DeleteProductUseCase}
 import com.mendev.apistore.ordering.application.{ChangeOrderStatusUseCase, CheckoutUseCase, GetMyOrderUseCase, ListMyOrdersUseCase, ListOrdersUseCase}
 import com.mendev.apistore.shared.SharedComponents
 import com.mendev.apistore.shared.actions.AuthenticatedAction
@@ -20,6 +21,8 @@ trait GraphQLComponents {
   def getMyOrderUseCase: GetMyOrderUseCase
   def listOrdersUseCase: ListOrdersUseCase
   def changeOrderStatusUseCase: ChangeOrderStatusUseCase
+  def changeProductStatusUseCase: ChangeProductStatusUseCase
+  def deleteProductUseCase: DeleteProductUseCase
 
   lazy val shoppingSchema: ShoppingSchema =
     new ShoppingSchema(addToCartUseCase, updateCartItemQuantityUseCase, removeFromCartUseCase, getCartUseCase)(executionContext)
@@ -27,7 +30,10 @@ trait GraphQLComponents {
   lazy val orderingSchema: OrderingSchema =
     new OrderingSchema(checkoutUseCase, listMyOrdersUseCase, getMyOrderUseCase, listOrdersUseCase, changeOrderStatusUseCase)(executionContext)
 
-  lazy val graphQLSchema: Schema[GraphQLContext, Unit] = new GraphQLSchema(shoppingSchema, orderingSchema).schema
+  lazy val catalogSchema: CatalogSchema =
+    new CatalogSchema(changeProductStatusUseCase, deleteProductUseCase)(executionContext)
+
+  lazy val graphQLSchema: Schema[GraphQLContext, Unit] = new GraphQLSchema(shoppingSchema, orderingSchema, catalogSchema).schema
 
   lazy val graphQLExecutor: GraphQLExecutor =
     new GraphQLExecutor(graphQLSchema, appConfig.graphql)(executionContext)

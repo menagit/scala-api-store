@@ -3,7 +3,7 @@ package com.mendev.apistore.graphql
 import com.mendev.apistore.shared.security.{Actor, Client, Manager, Role}
 import sangria.schema.{Field, ObjectType, Schema, StringType, fields}
 
-class GraphQLSchema(shopping: ShoppingSchema, ordering: OrderingSchema) {
+class GraphQLSchema(shopping: ShoppingSchema, ordering: OrderingSchema, catalog: CatalogSchema) {
 
   private val MeType: ObjectType[GraphQLContext, Actor] = ObjectType(
     "Me",
@@ -21,7 +21,7 @@ class GraphQLSchema(shopping: ShoppingSchema, ordering: OrderingSchema) {
   )
 
   private val MutationType: ObjectType[GraphQLContext, Unit] =
-    ObjectType("Mutation", shopping.mutationFields ++ ordering.mutationFields)
+    ObjectType("Mutation", shopping.mutationFields ++ ordering.mutationFields ++ catalog.mutationFields)
 
   val schema: Schema[GraphQLContext, Unit] = Schema(QueryType, Some(MutationType))
 
