@@ -64,6 +64,14 @@ class OrderingSchemaSpec extends PlaySpec with AppComponentsSuite with BeforeAnd
          |VALUES ($id, 'Mouse', 'Wireless mouse', 1, 19.99, 0, 10, 'ACTIVE', NULL, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))""".stripMargin
     )
 
+  private def stock(productId: Long): Int =
+    TestDatabase.query(s"SELECT stock FROM catalog_product WHERE id = $productId")(_.getInt(1)).head
+
+  private def lastOrderEvent: JsValue =
+    Json.parse(
+      TestDatabase.query("SELECT payload FROM shared_event WHERE event_type = 'OrderStatusChanged' ORDER BY id DESC LIMIT 1")(_.getString(1)).head
+    )
+
   private def graphql(token: String, query: String): JsValue = {
     val request = FakeRequest(POST, "/graphql").withJsonBody(Json.obj("query" -> query)).withHeaders("Authorization" -> s"Bearer $token")
     val result  = route(app, request).get
@@ -139,6 +147,66 @@ class OrderingSchemaSpec extends PlaySpec with AppComponentsSuite with BeforeAnd
       val json = graphql(managerToken, "query { myOrders { totalItems } }")
 
       (json \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "FORBIDDEN"
+    }
+  }
+
+  "Orders in GraphQL" must {
+    "list every client's orders newest first for a manager and answer FORBIDDEN to a client" in {
+      insertProduct(1)
+      val first  = placeOrder(clientToken, 1)
+      val second = placeOrder(otherClientToken, 1)
+
+      val page   = graphql(managerToken, "query { orders(page: 1, size: 5) { page size totalItems totalPages items { id } } }") \ "data" \ "orders"
+      val client = graphql(clientToken, "query { orders { totalItems } }")
+
+      (page \ "items").as[List[JsValue]].map(o => (o \ "id").as[String]) mustBe List(second, first)
+      (page \ "page").as[Int] mustBe 1
+      (page \ "size").as[Int] mustBe 5
+      (page \ "totalItems").as[Long] mustBe 2L
+      (page \ "totalPages").as[Long] mustBe 1L
+      (client \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "FORBIDDEN"
+    }
+  }
+
+  "Order status changes in GraphQL" must {
+    "ship a confirmed order with its tracking number and estimated delivery" in {
+      insertProduct(1)
+      val id = placeOrder(clientToken, 1)
+
+      val order = graphql(
+        managerToken,
+        s"""mutation { shipOrder(id: "$id", trackingNumber: "TRK-123", estimatedDelivery: "2026-10-25") { status trackingNumber estimatedDelivery } }"""
+      ) \ "data" \ "shipOrder"
+
+      (order \ "status").as[String] mustBe "SHIPPED"
+      (order \ "trackingNumber").as[String] mustBe "TRK-123"
+      (order \ "estimatedDelivery").as[String] mustBe "2026-10-25"
+      TestDatabase.query("SELECT changed_by_type FROM ordering_order_status_history WHERE new_status = 'SHIPPED'")(_.getString(1)) mustBe List("MANAGER")
+      (lastOrderEvent \ "trackingNumber").as[String] mustBe "TRK-123"
+    }
+
+    "cancel a confirmed order and give its stock back" in {
+      insertProduct(1)
+      val id = placeOrder(clientToken, 1)
+
+      val order = graphql(managerToken, s"""mutation { cancelOrder(id: "$id") { status } }""") \ "data" \ "cancelOrder"
+
+      (order \ "status").as[String] mustBe "CANCELLED"
+      stock(1) mustBe 10
+    }
+
+    "answer CONFLICT for a wrong move, VALIDATION_ERROR for a bad date and FORBIDDEN to a client" in {
+      insertProduct(1)
+      val id = placeOrder(clientToken, 1)
+
+      val deliver = graphql(managerToken, s"""mutation { deliverOrder(id: "$id") { status } }""")
+      val badDate = graphql(managerToken, s"""mutation { shipOrder(id: "$id", trackingNumber: "TRK-123", estimatedDelivery: "tomorrow") { status } }""")
+      val client  = graphql(clientToken, s"""mutation { shipOrder(id: "$id", trackingNumber: "TRK-123", estimatedDelivery: "2026-10-25") { status } }""")
+
+      (deliver \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "CONFLICT"
+      (badDate \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "VALIDATION_ERROR"
+      (badDate \ "errors" \ 0 \ "extensions" \ "details" \ 0 \ "field").as[String] mustBe "estimatedDelivery"
+      (client \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "FORBIDDEN"
     }
   }
 }

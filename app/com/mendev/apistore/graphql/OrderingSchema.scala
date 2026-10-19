@@ -1,13 +1,20 @@
 package com.mendev.apistore.graphql
 
-import com.mendev.apistore.ordering.application.{CheckoutUseCase, GetMyOrderUseCase, ListMyOrdersQuery, ListMyOrdersUseCase, OrderPage}
-import com.mendev.apistore.ordering.domain.{Order, OrderItem}
-import com.mendev.apistore.shared.security.Client
+import com.mendev.apistore.ordering.application.{ChangeOrderStatusUseCase, CheckoutUseCase, GetMyOrderUseCase, ListMyOrdersQuery, ListMyOrdersUseCase, ListOrdersQuery, ListOrdersUseCase, OrderPage}
+import com.mendev.apistore.ordering.domain.OrderStatus.{Cancelled, Delivered, Shipped}
+import com.mendev.apistore.ordering.domain.{Order, OrderItem, OrderStatus}
+import com.mendev.apistore.shared.security.{Actor, Client, Manager}
 import sangria.schema.{Argument, BigDecimalType, Field, IntType, ListType, LongType, ObjectType, OptionInputType, OptionType, StringType, fields}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-class OrderingSchema(checkout: CheckoutUseCase, listMyOrders: ListMyOrdersUseCase, getMyOrder: GetMyOrderUseCase)(implicit ec: ExecutionContext) {
+class OrderingSchema(
+  checkout: CheckoutUseCase,
+  listMyOrders: ListMyOrdersUseCase,
+  getMyOrder: GetMyOrderUseCase,
+  listOrders: ListOrdersUseCase,
+  changeOrderStatus: ChangeOrderStatusUseCase
+)(implicit ec: ExecutionContext) {
 
   private val OrderItemType: ObjectType[GraphQLContext, OrderItem] = ObjectType(
     "OrderItem",
@@ -51,6 +58,9 @@ class OrderingSchema(checkout: CheckoutUseCase, listMyOrders: ListMyOrdersUseCas
   private val SizeArg = Argument("size", OptionInputType(IntType), defaultValue = 20)
   private val IdArg   = Argument("id", StringType)
 
+  private val TrackingNumberArg    = Argument("trackingNumber", StringType)
+  private val EstimatedDeliveryArg = Argument("estimatedDelivery", StringType)
+
   val queryFields: List[Field[GraphQLContext, Unit]] = List(
     Field(
       "myOrders",
@@ -66,6 +76,15 @@ class OrderingSchema(checkout: CheckoutUseCase, listMyOrders: ListMyOrdersUseCas
       OrderType,
       arguments = List(IdArg),
       resolve = c => RoleGuard.require(c.ctx.actor, Client)(AppErrorException.orFail(getMyOrder.execute(c.ctx.actor, c.arg(IdArg))))
+    ),
+    Field(
+      "orders",
+      OrderPageType,
+      arguments = List(PageArg, SizeArg),
+      resolve = c =>
+        RoleGuard.require(c.ctx.actor, Manager) {
+          AppErrorException.orFail(listOrders.execute(ListOrdersQuery(c.arg(PageArg), c.arg(SizeArg))))
+        }
     )
   )
 
@@ -74,6 +93,24 @@ class OrderingSchema(checkout: CheckoutUseCase, listMyOrders: ListMyOrdersUseCas
       "checkout",
       OrderType,
       resolve = c => RoleGuard.require(c.ctx.actor, Client)(AppErrorException.orFail(checkout.execute(c.ctx.actor)))
-    )
+    ),
+    Field(
+      "shipOrder",
+      OrderType,
+      arguments = List(IdArg, TrackingNumberArg, EstimatedDeliveryArg),
+      resolve = c =>
+        changeStatus(c.ctx.actor, c.arg(IdArg), Shipped, Some(c.arg(TrackingNumberArg)), Some(c.arg(EstimatedDeliveryArg)))
+    ),
+    Field("deliverOrder", OrderType, arguments = List(IdArg), resolve = c => changeStatus(c.ctx.actor, c.arg(IdArg), Delivered, None, None)),
+    Field("cancelOrder", OrderType, arguments = List(IdArg), resolve = c => changeStatus(c.ctx.actor, c.arg(IdArg), Cancelled, None, None))
   )
+
+  private def changeStatus(
+    actor: Actor,
+    id: String,
+    to: OrderStatus,
+    trackingNumber: Option[String],
+    estimatedDelivery: Option[String]
+  ): Future[Order] =
+    RoleGuard.require(actor, Manager)(AppErrorException.orFail(changeOrderStatus.execute(actor, id, to, trackingNumber, estimatedDelivery)))
 }
