@@ -22,4 +22,6 @@ trait OrderRepository {
   def countAll(conn: Connection): Either[AppError, Long]
 
   def updateStatus(order: Order, conn: Connection): Either[AppError, Unit]
+
+  def existsOpenOrderWithProduct(productId: Long, conn: Connection): Either[AppError, Boolean]
 }

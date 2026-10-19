@@ -1,6 +1,6 @@
 package com.mendev.apistore.catalog
 
-import com.mendev.apistore.catalog.application.{CategoryRepository, CreateProductUseCase, GetProductSummariesUseCase, GetProductUseCase, ListProductsUseCase, ProductRepository, ProductStatusHistoryRepository, ReturnStockUseCase, StockRepository, TakeStockUseCase}
+import com.mendev.apistore.catalog.application.{CategoryRepository, ChangeProductStatusUseCase, CreateProductUseCase, DeleteProductUseCase, GetProductSummariesUseCase, GetProductUseCase, ListProductsUseCase, PendingOrderChecker, ProductRepository, ProductStatusHistoryRepository, ReturnStockUseCase, StockRepository, TakeStockUseCase}
 import com.mendev.apistore.catalog.infrastructure.persistence.{RelateCategoryRepository, RelateProductRepository, RelateProductStatusHistoryRepository, RelateStockRepository}
 import com.mendev.apistore.catalog.infrastructure.web.ProductController
 import com.mendev.apistore.shared.actions.AuthenticatedAction
@@ -16,6 +16,7 @@ trait CatalogComponents {
   lazy val stockRepository: StockRepository = new RelateStockRepository
 
   def authenticatedAction: AuthenticatedAction
+  def pendingOrderChecker: PendingOrderChecker
 
   lazy val createProductUseCase: CreateProductUseCase =
     new CreateProductUseCase(productRepository, categoryRepository, productStatusHistoryRepository, txRunner, clock)
@@ -31,6 +32,12 @@ trait CatalogComponents {
 
   lazy val takeStockUseCase: TakeStockUseCase = new TakeStockUseCase(stockRepository)
   lazy val returnStockUseCase: ReturnStockUseCase = new ReturnStockUseCase(stockRepository)
+
+  lazy val changeProductStatusUseCase: ChangeProductStatusUseCase =
+    new ChangeProductStatusUseCase(productRepository, productStatusHistoryRepository, txRunner, clock)
+
+  lazy val deleteProductUseCase: DeleteProductUseCase =
+    new DeleteProductUseCase(productRepository, productStatusHistoryRepository, pendingOrderChecker, txRunner, clock)
 
   lazy val productController: ProductController =
     new ProductController(controllerComponents, createProductUseCase, listProductsUseCase, getProductUseCase, authenticatedAction, roleAction)(executionContext)
