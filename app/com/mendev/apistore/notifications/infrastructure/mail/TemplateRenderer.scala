@@ -18,7 +18,8 @@ class TwirlTemplateRenderer(cipher: TokenCipher, linkBaseUrl: String) extends Te
     Map(
       "welcome"          -> withoutSecret(welcome),
       "password-changed" -> withoutSecret(passwordChanged),
-      "password-reset"   -> passwordReset
+      "password-reset"   -> passwordReset,
+      "order-status"     -> withoutSecret(orderStatus)
     )
 
   override def render(
@@ -57,6 +58,34 @@ class TwirlTemplateRenderer(cipher: TokenCipher, linkBaseUrl: String) extends Te
       text    = views.txt.passwordChanged(name, changedAt).body,
       html    = Some(views.html.passwordChanged(name, changedAt).body)
     )
+
+  private val orderStatusLines: Map[String, String] = Map(
+    "CONFIRMED" -> "Your order is confirmed",
+    "SHIPPED"   -> "Your order has shipped",
+    "DELIVERED" -> "Your order was delivered",
+    "CANCELLED" -> "Your order was cancelled"
+  )
+
+  private def orderStatus(to: String, data: Map[String, String]): Either[AppError, EmailMessage] =
+    required(data, "name").flatMap { name =>
+      required(data, "orderId").flatMap { orderId =>
+        required(data, "status").flatMap(statusLine).map(line => orderStatusEmail(to, name, orderId, line, data))
+      }
+    }
+
+  private def statusLine(status: String): Either[AppError, String] =
+    orderStatusLines.get(status).toRight(AppError.Validation("Unknown order status", List(FieldError("status", "unknown"))))
+
+  private def orderStatusEmail(to: String, name: String, orderId: String, line: String, data: Map[String, String]): EmailMessage = {
+    val tracking = data.get("trackingNumber")
+    val eta      = data.get("estimatedDelivery")
+    EmailMessage(
+      to      = to,
+      subject = line,
+      text    = views.txt.orderStatus(name, orderId, line, tracking, eta).body,
+      html    = Some(views.html.orderStatus(name, orderId, line, tracking, eta).body)
+    )
+  }
 
   // The clear token lives only inside this method:
   // decrypted, put in the link, never stored or logged

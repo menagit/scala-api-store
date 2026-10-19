@@ -1,0 +1,8 @@
+@(name: String, orderId: String, statusLine: String, trackingNumber: Option[String], estimatedDelivery: Option[String])
+Hi, @name
+
+@statusLine.
+
+Order: @orderId
+@trackingNumber.map { t => Tracking number: @t }
+@estimatedDelivery.map { d => Estimated delivery: @d }

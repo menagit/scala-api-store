@@ -1,0 +1,9 @@
+@(name: String, orderId: String, statusLine: String, trackingNumber: Option[String], estimatedDelivery: Option[String])
+
+@layout(title = statusLine) {
+<h1>Hi, @name</h1>
+<p>@statusLine.</p>
+<p>Order: @orderId</p>
+@trackingNumber.map { t => <p>Tracking number: @t</p> }
+@estimatedDelivery.map { d => <p>Estimated delivery: @d</p> }
+}

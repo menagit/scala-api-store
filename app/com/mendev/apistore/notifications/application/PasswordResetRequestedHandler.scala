@@ -2,9 +2,11 @@ package com.mendev.apistore.notifications.application
 
 import com.mendev.apistore.shared.error.AppError
 
+import java.sql.Connection
+
 class PasswordResetRequestedHandler extends EventHandler[PasswordResetRequestedEvent] {
 
-  override def handle(event: PasswordResetRequestedEvent): Either[AppError, List[NewDelivery]] =
+  override def handle(event: PasswordResetRequestedEvent, conn: Connection): Either[AppError, List[NewDelivery]] =
     Right(
       List(
         NewDelivery(

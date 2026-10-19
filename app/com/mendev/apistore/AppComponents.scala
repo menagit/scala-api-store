@@ -14,7 +14,7 @@ import play.filters.HttpFiltersComponents
 import _root_.router.Routes
 import com.mendev.apistore.notifications.NotificationsComponents
 import play.api.mvc.EssentialFilter
-import com.mendev.apistore.notifications.application.EmailMessage
+import com.mendev.apistore.notifications.application.{Recipient, RecipientDirectory}
 import com.mendev.apistore.ordering.OrderingComponents
 import com.mendev.apistore.ordering.application.OrderIdGenerator
 import java.util.UUID
@@ -41,6 +41,9 @@ class AppComponents(context: Context)
   override lazy val httpErrorHandler: HttpErrorHandler = new JsonErrorHandler
 
   lazy val orderIdGenerator: OrderIdGenerator = () => UUID.fromString(idGenerator.generatePublicId())
+
+  lazy val recipientDirectory: RecipientDirectory =
+    (publicId, conn) => getUserContactUseCase.executeIn(publicId, conn).map(_.map(c => Recipient(c.email, c.firstName)))
 
   // Arguments follow the order in conf/routes: error handler, then each controller once.
   lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController, productController, graphQLController)

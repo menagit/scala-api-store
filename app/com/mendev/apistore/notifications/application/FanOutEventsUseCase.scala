@@ -27,7 +27,7 @@ class FanOutEventsUseCase(
       val events = eventRepo.findUnprocessed(BatchSize, conn)
 
       val outcomes = events.map { event =>
-        dispatcher.fanOut(event) match {
+        dispatcher.fanOut(event, conn) match {
           case None =>
             eventRepo.markProcessed(event.id, now, conn)
             Skipped(event)
