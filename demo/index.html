@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API Store Demo</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --line: #dde1e6;
+    --text: #1d2330;
+    --muted: #6b7280;
+    --accent: #2f5bea;
+    --green: #1f8a4c;
+    --amber: #b7791f;
+    --red: #c53030;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+  }
+  header h1 { margin: 0; font-size: 18px; margin-right: auto; }
+  header input { width: 220px; }
+  a { color: var(--accent); }
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1fr;
+    gap: 16px;
+    padding: 16px;
+    align-items: start;
+  }
+  @media (max-width: 1100px) {
+    main { grid-template-columns: 1fr; }
+  }
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    min-width: 0;
+  }
+  h2 { margin: 0 0 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  h3 { margin: 16px 0 8px; font-size: 13px; color: var(--muted); text-transform: uppercase; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  input, select, button { font: inherit; }
+  input, select { padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  input[type="number"] { width: 80px; }
+  button {
+    padding: 6px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  button.secondary { background: #fff; color: var(--accent); font-size: 12px; padding: 4px 8px; }
+  .form { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; margin-bottom: 8px; }
+  .chip { font-size: 12px; font-weight: normal; padding: 2px 8px; border-radius: 999px; background: #e3f4ea; color: var(--green); }
+  .badge { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 4px; color: #fff; }
+  .ACTIVE { background: var(--green); }
+  .DISABLED { background: var(--amber); }
+  .HIDDEN, .DELETED { background: var(--muted); }
+  .error { background: var(--red); }
+  .selection { color: var(--muted); margin: 8px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: #f0f3ff; }
+  tbody tr.selected { background: #dfe6ff; }
+  tbody tr.deleted { cursor: not-allowed; color: var(--muted); text-decoration: line-through; }
+  td.id { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; word-break: break-all; }
+  .response {
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fafbfc;
+    font-size: 12px;
+  }
+  .response pre { margin: 6px 0 0; white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .response .meta { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>API Store demo</h1>
+  <label>API <input id="base" value="http://localhost:9000"></label>
+  <a href="http://localhost:9000/assets/docs/index.html" target="_blank" rel="noopener">Swagger UI</a>
+  <a href="http://localhost:8025" target="_blank" rel="noopener">Mailpit</a>
+</header>
+<main>
+  <section>
+    <h2>Client <span class="chip" id="c-chip" hidden>Signed in</span></h2>
+    <div class="row">
+      <input id="c-email" value="demo-client@apistore.com">
+      <input id="c-password" type="password" value="Secret1234">
+    </div>
+    <div class="row">
+      <button id="c-signup">1. Sign up</button>
+      <button id="c-signin">2. Sign in</button>
+      <button id="c-me">3. Who am I</button>
+    </div>
+    <div class="row">
+      <button id="c-add">4. Add selected to cart</button>
+      <label>Qty <input id="c-qty" type="number" min="1" value="1"></label>
+    </div>
+    <div class="row">
+      <button id="c-cart">5. My cart</button>
+      <button id="c-checkout">6. Checkout</button>
+      <button id="c-orders">7. My orders</button>
+    </div>
+    <h3>Failure cases</h3>
+    <div class="row">
+      <button class="secondary" id="c-forbidden">Create product as client (expect 403)</button>
+      <button class="secondary" id="c-anon">Who am I without a token (expect 401)</button>
+    </div>
+    <div class="response" id="c-res">Responses show here.</div>
+  </section>
+
+  <section>
+    <h2>Products <button class="secondary" id="p-refresh">Refresh</button></h2>
+    <div class="selection" id="p-selected">Selected product: none</div>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Discounted</th><th>Stock</th><th>Status</th></tr>
+      </thead>
+      <tbody id="p-rows"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Manager <span class="chip" id="m-chip" hidden>Signed in</span></h2>
+    <div class="row">
+      <input id="m-email" value="demo-manager@apistore.com">
+      <input id="m-password" type="password" value="Secret1234">
+    </div>
+    <div class="row">
+      <button id="m-signup">1. Sign up</button>
+      <button id="m-signin">2. Sign in</button>
+    </div>
+    <h3>New product</h3>
+    <div class="form">
+      <label for="m-name">Name</label><input id="m-name" value="Desk Lamp">
+      <label for="m-description">Description</label><input id="m-description" value="Demo product">
+      <label for="m-price">Price</label><input id="m-price" type="number" step="0.01" value="39.90">
+      <label for="m-stock">Stock</label><input id="m-stock" type="number" value="10">
+      <label for="m-category">Category</label>
+      <select id="m-category">
+        <option value="1">Electronics</option>
+        <option value="2">Apparel &amp; Clothing</option>
+        <option value="3">Home &amp; Kitchen</option>
+        <option value="4">Beauty &amp; Personal Care</option>
+        <option value="5">Sports &amp; Outdoors</option>
+      </select>
+      <label for="m-status">Status</label>
+      <select id="m-status">
+        <option>ACTIVE</option>
+        <option>DISABLED</option>
+      </select>
+      <label for="m-discount">Discount %</label><input id="m-discount" type="number" step="0.01" value="0">
+    </div>
+    <div class="row">
+      <button id="m-create">3. Create product</button>
+    </div>
+    <div class="row">
+      <button id="m-disable">4. Disable selected</button>
+      <button id="m-enable">5. Enable selected</button>
+      <button id="m-delete">6. Delete selected</button>
+    </div>
+    <h3>Orders</h3>
+    <div class="row">
+      <button id="m-orders">7. All orders</button>
+    </div>
+    <div class="selection" id="o-selected">Selected order: none</div>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Status</th><th>Total</th><th>Tracking</th><th>Delivery</th></tr>
+      </thead>
+      <tbody id="o-rows"></tbody>
+    </table>
+    <div class="row" style="margin-top: 8px">
+      <input id="m-tracking" value="TRK-1001">
+      <input id="m-date" type="date">
+    </div>
+    <div class="row">
+      <button id="m-ship">8. Ship selected</button>
+      <button id="m-deliver">9. Deliver selected</button>
+      <button id="m-cancel">10. Cancel selected</button>
+    </div>
+    <div class="response" id="m-res">Responses show here.</div>
+  </section>
+</main>
+<script>
+const state = {
+  tokens: { c: null, m: null },
+  products: new Map(),
+  selectedProduct: null,
+  orders: [],
+  selectedOrder: null
+};
+
+const $ = id => document.getElementById(id);
+
+function el(tag, text, className) {
+  const e = document.createElement(tag);
+  if (text !== undefined) e.textContent = text;
+  if (className) e.className = className;
+  return e;
+}
+
+function note(panel, text) {
+  $(panel + '-res').replaceChildren(el('div', text));
+}
+
+function show(panel, request, status, ms, data) {
+  const meta = el('div', `HTTP ${status} · ${ms} ms `, 'meta');
+  const code = data?.errors?.[0]?.extensions?.code;
+  if (code) meta.append(el('span', code, 'badge error'));
+  $(panel + '-res').replaceChildren(el('pre', request), meta, el('pre', JSON.stringify(data, null, 2)));
+}
+
+async function send(panel, method, path, body, token, request) {
+  const headers = {};
+  if (body) headers['content-type'] = 'application/json';
+  if (token) headers.authorization = 'Bearer ' + token;
+  const start = performance.now();
+  try {
+    const res = await fetch($('base').value + path, { method, headers, body: body && JSON.stringify(body) });
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+    show(panel, request, res.status, Math.round(performance.now() - start), data);
+    return { status: res.status, data };
+  } catch (e) {
+    note(panel, `${request}\nRequest failed: is the API running and CORS_ALLOWED_ORIGINS set?`);
+    return { status: 0, data: null };
+  }
+}
+
+function rest(panel, method, path, body, token = state.tokens[panel]) {
+  return send(panel, method, path, body, token, `${method} ${path}`);
+}
+
+function gql(panel, query) {
+  return send(panel, 'POST', '/graphql', { query }, state.tokens[panel], query);
+}
+
+function signedIn(panel) {
+  if (!state.tokens[panel]) note(panel, 'Sign in first');
+  return Boolean(state.tokens[panel]);
+}
+
+function picked(panel, value, what) {
+  if (!value) note(panel, `Select ${what} first`);
+  return Boolean(value);
+}
+
+function remember(fields) {
+  state.products.set(fields.id, { ...state.products.get(fields.id), hidden: false, ...fields });
+}
+
+function rememberPublic(p) {
+  remember({
+    id: p.id,
+    name: p.name,
+    category: p.category.name,
+    price: p.price,
+    discountedPrice: p.discountedPrice,
+    stock: p.stock,
+    status: 'ACTIVE',
+    deleted: false
+  });
+}
+
+function markMissing(listed) {
+  state.products.forEach(p => {
+    if (!listed.has(p.id) && p.status === 'ACTIVE' && !p.deleted) p.hidden = true;
+  });
+}
+
+async function loadProducts() {
+  const res = await fetch($('base').value + '/products?size=100');
+  const page = await res.json();
+  markMissing(new Set(page.items.map(p => p.id)));
+  page.items.forEach(rememberPublic);
+  renderProducts();
+}
+
+function productRow(p) {
+  const status = p.deleted ? 'DELETED' : p.hidden ? 'HIDDEN' : p.status;
+  const tr = el('tr', undefined, p.deleted ? 'deleted' : p.id === state.selectedProduct ? 'selected' : '');
+  const badge = el('td');
+  badge.append(el('span', status, 'badge ' + status));
+  tr.append(el('td', p.id), el('td', p.name), el('td', p.category), el('td', p.price), el('td', p.discountedPrice), el('td', p.stock), badge);
+  if (!p.deleted) tr.onclick = () => selectProduct(p.id);
+  return tr;
+}
+
+function selectProduct(id) {
+  state.selectedProduct = id;
+  renderProducts();
+}
+
+function renderProducts() {
+  if (state.products.get(state.selectedProduct)?.deleted) state.selectedProduct = null;
+  const rows = [...state.products.values()].sort((a, b) => a.id - b.id).map(productRow);
+  $('p-rows').replaceChildren(...rows);
+  const p = state.products.get(state.selectedProduct);
+  $('p-selected').textContent = p ? `Selected product: #${p.id} ${p.name}` : 'Selected product: none';
+}
+
+$('p-refresh').onclick = loadProducts;
+loadProducts();
+
+const names = { c: ['Demo', 'Client'], m: ['Demo', 'Manager'] };
+
+function credentials(panel) {
+  return { email: $(panel + '-email').value, password: $(panel + '-password').value };
+}
+
+async function signUp(panel) {
+  const [firstName, lastName] = names[panel];
+  const r = await rest(panel, 'POST', '/auth/sign-up', { ...credentials(panel), firstName, lastName }, null);
+  if (r.status === 409) $(panel + '-res').append(el('div', 'already registered, sign in'));
+}
+
+async function signIn(panel) {
+  const r = await rest(panel, 'POST', '/auth/sign-in', credentials(panel), null);
+  if (r.status === 200) {
+    state.tokens[panel] = r.data.access_token;
+    $(panel + '-chip').hidden = false;
+  }
+}
+
+$('c-signup').onclick = () => signUp('c');
+$('c-signin').onclick = () => signIn('c');
+
+$('c-me').onclick = () => {
+  if (signedIn('c')) rest('c', 'GET', '/me');
+};
+
+$('c-add').onclick = () => {
+  if (!signedIn('c') || !picked('c', state.selectedProduct, 'a product')) return;
+  gql('c', `mutation { addToCart(productId: ${state.selectedProduct}, quantity: ${$('c-qty').value}) { total lines { name quantity lineTotal } } }`);
+};
+
+$('c-cart').onclick = () => {
+  if (signedIn('c')) gql('c', 'query { myCart { total lines { productId name quantity price discountedPrice lineTotal available } } }');
+};
+
+$('c-checkout').onclick = async () => {
+  if (!signedIn('c')) return;
+  await gql('c', 'mutation { checkout { id status total items { productName quantity lineTotal } } }');
+  loadProducts();
+};
+
+$('c-orders').onclick = () => {
+  if (signedIn('c')) gql('c', 'query { myOrders(page: 1, size: 10) { totalItems items { id status total trackingNumber estimatedDelivery } } }');
+};
+
+$('c-forbidden').onclick = () => {
+  if (signedIn('c')) rest('c', 'POST', '/products', { name: 'Not allowed', description: '', categoryId: 1, price: 1, discountPercent: 0, stock: 1 });
+};
+
+$('c-anon').onclick = () => rest('c', 'GET', '/me', null, null);
+
+$('m-signup').onclick = () => signUp('m');
+$('m-signin').onclick = () => signIn('m');
+
+function newProduct() {
+  return {
+    name: $('m-name').value,
+    description: $('m-description').value,
+    categoryId: Number($('m-category').value),
+    price: Number($('m-price').value),
+    discountPercent: Number($('m-discount').value),
+    stock: Number($('m-stock').value),
+    status: $('m-status').value
+  };
+}
+
+$('m-create').onclick = async () => {
+  if (!signedIn('m')) return;
+  const r = await rest('m', 'POST', '/products', newProduct());
+  if (r.status !== 201) return;
+  remember({
+    id: r.data.id,
+    name: r.data.name,
+    category: $('m-category').selectedOptions[0].textContent,
+    price: r.data.price,
+    discountedPrice: '—',
+    stock: r.data.stock,
+    status: r.data.status,
+    deleted: false
+  });
+  loadProducts();
+};
+
+async function changeProduct(mutation) {
+  if (!signedIn('m') || !picked('m', state.selectedProduct, 'a product')) return;
+  const r = await gql('m', `mutation { ${mutation}(id: ${state.selectedProduct}) { id name status deleted } }`);
+  const product = r.data?.data?.[mutation];
+  if (product) {
+    remember(product);
+    renderProducts();
+  }
+}
+
+$('m-disable').onclick = () => changeProduct('disableProduct');
+$('m-enable').onclick = () => changeProduct('enableProduct');
+$('m-delete').onclick = () => changeProduct('deleteProduct');
+
+const ordersQuery = 'query { orders(page: 1, size: 20) { totalItems items { id status total createdAt trackingNumber estimatedDelivery } } }';
+
+async function quietGql(query) {
+  const res = await fetch($('base').value + '/graphql', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: 'Bearer ' + state.tokens.m },
+    body: JSON.stringify({ query })
+  });
+  return (await res.json()).data;
+}
+
+function orderRow(o) {
+  const tr = el('tr', undefined, o.id === state.selectedOrder ? 'selected' : '');
+  tr.append(el('td', o.id, 'id'), el('td', o.status), el('td', o.total), el('td', o.trackingNumber), el('td', o.estimatedDelivery));
+  tr.onclick = () => selectOrder(o.id);
+  return tr;
+}
+
+function selectOrder(id) {
+  state.selectedOrder = id;
+  renderOrders();
+}
+
+function renderOrders() {
+  $('o-rows').replaceChildren(...state.orders.map(orderRow));
+  $('o-selected').textContent = state.selectedOrder ? `Selected order: ${state.selectedOrder}` : 'Selected order: none';
+}
+
+function showOrders(page) {
+  state.orders = page?.items ?? [];
+  renderOrders();
+}
+
+$('m-orders').onclick = async () => {
+  if (!signedIn('m')) return;
+  const r = await gql('m', ordersQuery);
+  showOrders(r.data?.data?.orders);
+};
+
+async function refreshOrders() {
+  showOrders((await quietGql(ordersQuery))?.orders);
+}
+
+async function changeOrder(mutation, args = '') {
+  if (!signedIn('m') || !picked('m', state.selectedOrder, 'an order')) return;
+  await gql('m', `mutation { ${mutation}(id: "${state.selectedOrder}"${args}) { id status trackingNumber estimatedDelivery } }`);
+  refreshOrders();
+}
+
+$('m-ship').onclick = () =>
+  changeOrder('shipOrder', `, trackingNumber: "${$('m-tracking').value}", estimatedDelivery: "${$('m-date').value}"`);
+$('m-deliver').onclick = () => changeOrder('deliverOrder');
+$('m-cancel').onclick = () => changeOrder('cancelOrder');
+
+const delivery = new Date();
+delivery.setDate(delivery.getDate() + 5);
+$('m-date').value = delivery.toLocaleDateString('en-CA');
+</script>
+</body>
+</html>
