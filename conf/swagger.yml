@@ -1,0 +1,26 @@
+openapi: 3.0.0
+info:
+  title: API Store
+  description: E-commerce backend, REST and GraphQL
+  version: 1.0.0
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: {type: string}
+            message: {type: string}
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field: {type: string}
+                  message: {type: string}

@@ -2,16 +2,310 @@
 # This file defines all application routes (Higher priority routes first)
 # https://www.playframework.com/documentation/latest/ScalaRouting
 # ~~~~
+
+###
+#  summary: Health check
+#  tags:
+#    - Health
+#  responses:
+#    200:
+#      description: Service is up
+###
 GET   /health                       com.mendev.apistore.shared.health.web.HealthController.health
+
+###
+#  summary: Sign up a client
+#  tags:
+#    - Auth
+#  requestBody:
+#    required: true
+#    content:
+#      application/json:
+#        schema:
+#          type: object
+#          required: [email, password, firstName, lastName]
+#          properties:
+#            email: {type: string}
+#            password: {type: string}
+#            firstName: {type: string}
+#            lastName: {type: string}
+#  responses:
+#    201:
+#      description: Client created
+#      content:
+#        application/json:
+#          schema:
+#            type: object
+#            properties:
+#              publicId: {type: string}
+#    400:
+#      description: Validation error
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+###
 POST  /auth/sign-up                 com.mendev.apistore.identity.infrastructure.web.AuthController.register
+
+###
+#  summary: Sign in (rate limited, 5 per minute per IP)
+#  tags:
+#    - Auth
+#  requestBody:
+#    required: true
+#    content:
+#      application/json:
+#        schema:
+#          type: object
+#          required: [email, password]
+#          properties:
+#            email: {type: string}
+#            password: {type: string}
+#  responses:
+#    200:
+#      description: Access token in the body, refresh token in an HttpOnly cookie
+#      content:
+#        application/json:
+#          schema:
+#            type: object
+#            properties:
+#              access_token: {type: string}
+#              token_type: {type: string}
+#              expires_in: {type: integer}
+#    400:
+#      description: Validation error
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    401:
+#      description: Wrong email or password
+#    429:
+#      description: Too many attempts
+###
 POST  /auth/sign-in                 com.mendev.apistore.identity.infrastructure.web.AuthController.login
+
+###
+#  summary: Get a new access token using the refresh cookie (no body)
+#  tags:
+#    - Auth
+#  responses:
+#    200:
+#      description: New access token, refresh cookie rotated
+#    401:
+#      description: Missing, invalid or expired refresh token
+###
 POST  /auth/refresh                 com.mendev.apistore.identity.infrastructure.web.AuthController.refresh
+
+###
+#  summary: Sign out (clears the refresh cookie)
+#  tags:
+#    - Auth
+#  responses:
+#    204:
+#      description: Signed out
+###
 POST  /auth/sign-out                com.mendev.apistore.identity.infrastructure.web.AuthController.signOut
+
+###
+#  summary: Who am I
+#  tags:
+#    - Auth
+#  security:
+#    - bearerAuth: []
+#  responses:
+#    200:
+#      description: The signed-in user
+#      content:
+#        application/json:
+#          schema:
+#            type: object
+#            properties:
+#              publicId: {type: string}
+#              role: {type: string, enum: [CLIENT, MANAGER]}
+#    401:
+#      description: Missing or invalid token
+###
 GET   /me                           com.mendev.apistore.identity.infrastructure.web.MeController.me
+
+###
+#  summary: Change password (clears the refresh cookie)
+#  tags:
+#    - Auth
+#  security:
+#    - bearerAuth: []
+#  requestBody:
+#    required: true
+#    content:
+#      application/json:
+#        schema:
+#          type: object
+#          required: [currentPassword, newPassword]
+#          properties:
+#            currentPassword: {type: string}
+#            newPassword: {type: string}
+#  responses:
+#    204:
+#      description: Password changed
+#    400:
+#      description: Validation error
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    401:
+#      description: Missing or invalid token, or wrong current password
+###
 POST  /auth/change-password         com.mendev.apistore.identity.infrastructure.web.AuthController.changePassword
+
+###
+#  summary: Ask for a password reset email (always 202 for a valid request)
+#  tags:
+#    - Auth
+#  requestBody:
+#    required: true
+#    content:
+#      application/json:
+#        schema:
+#          type: object
+#          required: [email]
+#          properties:
+#            email: {type: string}
+#  responses:
+#    202:
+#      description: Accepted, whether or not the email exists
+#    400:
+#      description: Validation error
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    429:
+#      description: Too many attempts
+###
 POST  /auth/forgot-password         com.mendev.apistore.identity.infrastructure.web.AuthController.forgotPassword
+
+###
+#  summary: Set a new password with the reset token
+#  tags:
+#    - Auth
+#  requestBody:
+#    required: true
+#    content:
+#      application/json:
+#        schema:
+#          type: object
+#          required: [token, newPassword]
+#          properties:
+#            token: {type: string}
+#            newPassword: {type: string}
+#  responses:
+#    204:
+#      description: Password reset
+#    400:
+#      description: Validation error
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    429:
+#      description: Too many attempts
+###
 POST  /auth/reset-password          com.mendev.apistore.identity.infrastructure.web.AuthController.resetPassword
+
+###
+#  summary: Create a product (manager only). Created DISABLED unless status is ACTIVE.
+#  tags:
+#    - Products
+#  security:
+#    - bearerAuth: []
+#  requestBody:
+#    required: true
+#    content:
+#      application/json:
+#        schema:
+#          type: object
+#          properties:
+#            name: {type: string}
+#            description: {type: string}
+#            categoryId: {type: integer, format: int64}
+#            price: {type: number}
+#            discountPercent: {type: number}
+#            stock: {type: integer}
+#            status: {type: string, enum: [ACTIVE, DISABLED]}
+#  responses:
+#    201:
+#      description: Product created
+#    400:
+#      description: Validation error
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    401:
+#      description: Missing or invalid token
+#    403:
+#      description: Not a manager
+###
 POST  /products                     com.mendev.apistore.catalog.infrastructure.web.ProductController.create
+
+###
+#  summary: List products (public, active only)
+#  tags:
+#    - Products
+#  parameters:
+#    - {name: page, in: query, schema: {type: integer}}
+#    - {name: size, in: query, schema: {type: integer}}
+#    - {name: sort, in: query, schema: {type: string, enum: [price, name, createdAt]}}
+#    - {name: order, in: query, schema: {type: string, enum: [asc, desc]}}
+#  responses:
+#    200:
+#      description: A page of products (items, page, size, totalItems, totalPages)
+#    400:
+#      description: Invalid query value
+###
 GET   /products                     com.mendev.apistore.catalog.infrastructure.web.ProductController.list
+
+###
+#  summary: Get one product (public)
+#  tags:
+#    - Products
+#  responses:
+#    200:
+#      description: The product
+#    404:
+#      description: Product not found
+###
 GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.web.ProductController.detail(id: Long)
+
+###
+#  summary: GraphQL endpoint (cart, orders, manager actions). Needs a token.
+#  tags:
+#    - GraphQL
+#  security:
+#    - bearerAuth: []
+#  requestBody:
+#    required: true
+#    content:
+#      application/json:
+#        schema:
+#          type: object
+#          required: [query]
+#          properties:
+#            query: {type: string}
+#            operationName: {type: string}
+#            variables: {type: object}
+#  responses:
+#    200:
+#      description: GraphQL result (errors are inside the body)
+#    400:
+#      description: Body is not valid JSON or has no query
+#    401:
+#      description: Missing or invalid token
+###
 POST  /graphql                      com.mendev.apistore.graphql.GraphQLController.execute
+
+### NoDocs ###
+GET   /assets/*file                 controllers.Assets.at(path="/public", file)
+### NoDocs ###
+GET   /docs/swagger-ui/*file        controllers.Assets.at(path="/public/lib/swagger-ui", file)
