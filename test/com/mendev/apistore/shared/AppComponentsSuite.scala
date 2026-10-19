@@ -11,6 +11,8 @@ trait AppComponentsSuite extends OneAppPerSuiteWithComponents { this: TestSuite 
 
   implicit lazy val materializer: Materializer = app.materializer
 
+  def extraSettings: Map[String, String] = Map.empty
+
   override def components: BuiltInComponents = {
     val db  = TestDatabase.config
     val url = s"jdbc:mysql://${db.host}:${db.port}/${db.name}"
@@ -35,7 +37,7 @@ trait AppComponentsSuite extends OneAppPerSuiteWithComponents { this: TestSuite 
         "app.jwt.access-token-ttl" -> "2 minutes",
         "app.encryption.key"       -> "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
         "app.mail.link-base-url"   -> "http://localhost:3000",
-      )
+      ) ++ extraSettings
     )
 
     new AppComponents(context)

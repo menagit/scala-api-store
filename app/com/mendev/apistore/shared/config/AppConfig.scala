@@ -36,7 +36,8 @@ final case class AppConfig(
                             mail: MailConfig,
                             jwt: JwtConfig,
                             encryption: EncryptionConfig,
-                            graphql: GraphQLConfig = GraphQLConfig()
+                            graphql: GraphQLConfig = GraphQLConfig(),
+                            cors: CorsConfig = CorsConfig()
                           )
 
 object AppConfig {
