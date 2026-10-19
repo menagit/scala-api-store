@@ -88,11 +88,11 @@ class CheckoutUseCase(
       orderRepo
         .updateStatus(confirmed, conn)
         .flatMap(_ => historyRepo.insert(confirmed.id, entry, conn))
-        .map(_ => publish(confirmed, List(created, entry), now, conn))
+        .flatMap(_ => publish(confirmed, List(created, entry), now, conn))
     }
 
-  private def publish(order: Order, entries: List[OrderStatusHistoryEntry], now: Instant, conn: Connection): Order = {
+  private def publish(order: Order, entries: List[OrderStatusHistoryEntry], now: Instant, conn: Connection): Either[AppError, Order] = {
     entries.foreach(entry => eventPublisher.publish(OrderStatusChanged.of(order, entry), now, conn))
-    order
+    Right(order)
   }
 }
