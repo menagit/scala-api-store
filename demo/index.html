@@ -127,12 +127,22 @@
     <div class="row">
       <button class="secondary" id="c-forbidden">Create product as client (expect 403)</button>
       <button class="secondary" id="c-anon">Who am I without a token (expect 401)</button>
+      <button class="secondary" id="c-bad-category">Filter products with categoryId=abc (expect 400)</button>
     </div>
     <div class="response" id="c-res">Responses show here.</div>
   </section>
 
   <section>
-    <h2>Products <button class="secondary" id="p-refresh">Refresh</button></h2>
+    <h2>Products <button class="secondary" id="p-refresh">Refresh</button>
+      <select id="p-category">
+        <option value="">All categories</option>
+        <option value="1">Electronics</option>
+        <option value="2">Apparel &amp; Clothing</option>
+        <option value="3">Home &amp; Kitchen</option>
+        <option value="4">Beauty &amp; Personal Care</option>
+        <option value="5">Sports &amp; Outdoors</option>
+      </select>
+    </h2>
     <div class="selection" id="p-selected">Selected product: none</div>
     <table>
       <thead>
@@ -277,6 +287,7 @@ function rememberPublic(p) {
     id: p.id,
     name: p.name,
     category: p.category.name,
+    categoryId: p.category.id,
     price: p.price,
     discountedPrice: p.discountedPrice,
     stock: p.stock,
@@ -285,16 +296,17 @@ function rememberPublic(p) {
   });
 }
 
-function markMissing(listed) {
+function markMissing(listed, categoryId) {
   state.products.forEach(p => {
-    if (!listed.has(p.id) && p.status === 'ACTIVE' && !p.deleted) p.hidden = true;
+    if (!listed.has(p.id) && (!categoryId || p.categoryId === categoryId) && p.status === 'ACTIVE' && !p.deleted) p.hidden = true;
   });
 }
 
 async function loadProducts() {
-  const res = await fetch($('base').value + '/products?size=100');
+  const categoryId = Number($('p-category').value);
+  const res = await fetch($('base').value + '/products?size=100' + (categoryId ? '&categoryId=' + categoryId : ''));
   const page = await res.json();
-  markMissing(new Set(page.items.map(p => p.id)));
+  markMissing(new Set(page.items.map(p => p.id)), categoryId);
   page.items.forEach(rememberPublic);
   renderProducts();
 }
@@ -316,13 +328,15 @@ function selectProduct(id) {
 
 function renderProducts() {
   if (state.products.get(state.selectedProduct)?.deleted) state.selectedProduct = null;
-  const rows = [...state.products.values()].sort((a, b) => a.id - b.id).map(productRow);
+  const categoryId = Number($('p-category').value);
+  const rows = [...state.products.values()].filter(p => !categoryId || p.categoryId === categoryId).sort((a, b) => a.id - b.id).map(productRow);
   $('p-rows').replaceChildren(...rows);
   const p = state.products.get(state.selectedProduct);
   $('p-selected').textContent = p ? `Selected product: #${p.id} ${p.name}` : 'Selected product: none';
 }
 
 $('p-refresh').onclick = loadProducts;
+$('p-category').onchange = loadProducts;
 loadProducts();
 
 const names = { c: ['Demo', 'Client'], m: ['Demo', 'Manager'] };
@@ -376,6 +390,7 @@ $('c-forbidden').onclick = () => {
 };
 
 $('c-anon').onclick = () => rest('c', 'GET', '/me', null, null);
+$('c-bad-category').onclick = () => rest('c', 'GET', '/products?categoryId=abc', null, null);
 
 $('m-signup').onclick = () => signUp('m');
 $('m-signin').onclick = () => signIn('m');
@@ -400,12 +415,14 @@ $('m-create').onclick = async () => {
     id: r.data.id,
     name: r.data.name,
     category: $('m-category').selectedOptions[0].textContent,
+    categoryId: Number($('m-category').value),
     price: r.data.price,
     discountedPrice: '—',
     stock: r.data.stock,
     status: r.data.status,
     deleted: false
   });
+  $('p-category').value = '';
   loadProducts();
 };
 
@@ -415,6 +432,7 @@ async function changeProduct(mutation) {
   const product = r.data?.data?.[mutation];
   if (product) {
     remember(product);
+    $('p-category').value = '';
     renderProducts();
   }
 }
