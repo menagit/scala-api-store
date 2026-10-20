@@ -352,7 +352,7 @@ POST  /products                     com.mendev.apistore.catalog.infrastructure.w
 
 ###
 #  summary: List products (public)
-#  description: Only ACTIVE products that are not deleted. Out-of-range page or size values are corrected. An unknown sort or order is a 400.
+#  description: Only ACTIVE products that are not deleted. Out-of-range page or size values are corrected. An unknown sort or order, or a categoryId that is not a number, is a 400.
 #  tags:
 #  - Products
 #  parameters:
@@ -383,6 +383,11 @@ POST  /products                     com.mendev.apistore.catalog.infrastructure.w
 #      enum:
 #      - asc
 #      - desc
+#  - name: categoryId
+#    in: query
+#    description: Category id (the seed categories are 1 to 5). An unknown id returns an empty page. A value that is not a number is a 400
+#    schema:
+#      type: integer
 #  responses:
 #    200:
 #      description: A page of products

@@ -33,7 +33,8 @@ class ProductController(
   def list: Action[AnyContent] = Action.async { request =>
     val query = ListProductsQuery(
       request.getQueryString("page"), request.getQueryString("size"),
-      request.getQueryString("sort"), request.getQueryString("order")
+      request.getQueryString("sort"), request.getQueryString("order"),
+      request.getQueryString("categoryId")
     )
     listProductsUseCase.execute(query).map {
       case Right(page) => Ok(ProductJson.pageToJson(page))
