@@ -43,11 +43,11 @@ class RelateProductRepository extends ProductRepository {
     Right(entities.map(ProductEntity.toDomain))
   }
 
-  override def findVisiblePage(sort: ProductSort, order: SortOrder, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Product]] = {
+  override def findVisiblePage(categoryId: Option[Long], sort: ProductSort, order: SortOrder, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Product]] = {
     val entities = (sql"""
       SELECT id, name, description, category_id, price, discount_percent, stock, status, deleted_at, created_at, updated_at
       FROM catalog_product
-      WHERE status = 'ACTIVE' AND deleted_at IS NULL
+      WHERE status = 'ACTIVE' AND deleted_at IS NULL""" + categoryFilter(categoryId) + sql"""
       ORDER BY """ + orderBy(sort, order).unsafeSql + sql"""
       LIMIT $limit OFFSET $offset
     """).asList(ProductEntity.fromRow)(conn)
@@ -55,12 +55,12 @@ class RelateProductRepository extends ProductRepository {
     Right(entities.map(ProductEntity.toDomain))
   }
 
-  override def countVisible(conn: Connection): Either[AppError, Long] = {
-    val total = sql"""
+  override def countVisible(categoryId: Option[Long], conn: Connection): Either[AppError, Long] = {
+    val total = (sql"""
       SELECT COUNT(*) AS total
       FROM catalog_product
-      WHERE status = 'ACTIVE' AND deleted_at IS NULL
-    """.asSingle(_.long("total"))(conn)
+      WHERE status = 'ACTIVE' AND deleted_at IS NULL""" + categoryFilter(categoryId)
+    ).asSingle(_.long("total"))(conn)
 
     Right(total)
   }
@@ -114,4 +114,7 @@ class RelateProductRepository extends ProductRepository {
     }
     s"$column $direction, id $direction"
   }
+
+  private def categoryFilter(categoryId: Option[Long]): InterpolatedQuery =
+    categoryId.fold(sql"")(id => sql" AND category_id = $id")
 }

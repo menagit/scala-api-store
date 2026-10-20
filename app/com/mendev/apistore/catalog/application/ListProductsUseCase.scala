@@ -14,23 +14,24 @@ class ListProductsUseCase(productRepo: ProductRepository, categoryRepo: Category
     val size  = parseInt("size", query.size, 20).map(s => if (s < 1) 20 else math.min(s, 100))
     val sort  = parseSort(query.sort)
     val order = parseOrder(query.order)
-    (page, size, sort, order) match {
-      //Match when the four are 'Right', no chain flatmap
-      case (Right(p), Right(s), Right(so), Right(o)) => load(p, s, so, o)
+    val categoryId = parseCategoryId(query.categoryId)
+    (page, size, sort, order, categoryId) match {
+      //Match when the five are 'Right', no chain flatmap
+      case (Right(p), Right(s), Right(so), Right(o), Right(c)) => load(p, s, so, o, c)
       case _ =>
         //Let client see all errors at once
-        val errors = List(page, size, sort, order).collect { case Left(e) => e }
+        val errors = List(page, size, sort, order, categoryId).collect { case Left(e) => e }
         Future.successful(Left(AppError.Validation("Invalid request", errors)))
     }
   }
 
   // One transaction, so the count and the page see the same data.
-  private def load(page: Int, size: Int, sort: ProductSort, order: SortOrder): Future[Either[AppError, ProductPage]] =
+  private def load(page: Int, size: Int, sort: ProductSort, order: SortOrder, categoryId: Option[Long]): Future[Either[AppError, ProductPage]] =
     runner.run { conn =>
-      productRepo.countVisible(conn) match {
+      productRepo.countVisible(categoryId, conn) match {
         case Left(e) => Left(e)
         case Right(total) =>
-          productRepo.findVisiblePage(sort, order, size, (page - 1).toLong * size, conn) match {
+          productRepo.findVisiblePage(categoryId, sort, order, size, (page - 1).toLong * size, conn) match {
             case Left(e) => Left(e)
             case Right(products) =>
               categoryRepo.findAll(conn).map(categories => toPage(products, categories, page, size, total))
@@ -49,6 +50,11 @@ class ListProductsUseCase(productRepo: ProductRepository, categoryRepo: Category
   private def parseInt(field: String, text: Option[String], default: Int): Either[FieldError, Int] = text match {
     case None    => Right(default)
     case Some(t) => t.toIntOption.toRight(FieldError(field, "must be a whole number"))
+  }
+
+  private def parseCategoryId(text: Option[String]): Either[FieldError, Option[Long]] = text match {
+    case None    => Right(None)
+    case Some(t) => t.toLongOption.map(Some(_)).toRight(FieldError("categoryId", "must be a whole number"))
   }
 
   private def parseSort(text: Option[String]): Either[FieldError, ProductSort] = text match {

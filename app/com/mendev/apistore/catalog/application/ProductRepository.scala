@@ -15,9 +15,9 @@ trait ProductRepository {
 
   def findByIds(ids: Seq[Long], conn: Connection): Either[AppError, List[Product]]
 
-  def findVisiblePage(sort: ProductSort, order: SortOrder, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Product]]
+  def findVisiblePage(categoryId: Option[Long], sort: ProductSort, order: SortOrder, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Product]]
 
-  def countVisible(conn: Connection): Either[AppError, Long]
+  def countVisible(categoryId: Option[Long], conn: Connection): Either[AppError, Long]
 
   def lockById(id: Long, conn: Connection): Either[AppError, Option[Product]]
 
