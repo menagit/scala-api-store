@@ -116,7 +116,9 @@
     </div>
     <div class="row">
       <button id="c-add">4. Add selected to cart</button>
-      <label>Qty <input id="c-qty" type="number" min="1" value="1"></label>
+      <label>Qty <input id="c-qty" type="number" min="0" value="1"></label>
+      <button id="c-set-qty">Set quantity of selected</button>
+      <button id="c-remove">Remove selected from cart</button>
     </div>
     <div class="row">
       <button id="c-cart">5. My cart</button>
@@ -369,6 +371,16 @@ $('c-me').onclick = () => {
 $('c-add').onclick = () => {
   if (!signedIn('c') || !picked('c', state.selectedProduct, 'a product')) return;
   gql('c', `mutation { addToCart(productId: ${state.selectedProduct}, quantity: ${$('c-qty').value}) { total lines { name quantity lineTotal } } }`);
+};
+
+$('c-set-qty').onclick = () => {
+  if (!signedIn('c') || !picked('c', state.selectedProduct, 'a product')) return;
+  gql('c', `mutation { updateCartItemQuantity(productId: ${state.selectedProduct}, quantity: ${$('c-qty').value}) { total lines { productId name quantity lineTotal } } }`);
+};
+
+$('c-remove').onclick = () => {
+  if (!signedIn('c') || !picked('c', state.selectedProduct, 'a product')) return;
+  gql('c', `mutation { removeFromCart(productId: ${state.selectedProduct}) { total lines { productId name quantity lineTotal } } }`);
 };
 
 $('c-cart').onclick = () => {
