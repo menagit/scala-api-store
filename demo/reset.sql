@@ -9,6 +9,7 @@ TRUNCATE TABLE catalog_product;
 TRUNCATE TABLE shared_event;
 TRUNCATE TABLE notifications_delivery;
 TRUNCATE TABLE identity_token;
+TRUNCATE TABLE identity_user;
 
 INSERT INTO catalog_product
 (id, name, description, category_id, price, discount_percent, stock, status, deleted_at, created_at, updated_at)
