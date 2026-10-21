@@ -1,0 +1,25 @@
+flowchart TB
+    client["<b>Client</b><br/>[Person]<br/>Browses products, manages a cart,<br/>places and pays for orders"]
+    manager["<b>Manager</b><br/>[Person]<br/>Manages products, stock and prices,<br/>updates order status"]
+
+    subgraph system["API Store [Software System]"]
+        api["<b>API</b><br/>[Container: Scala 2.13, Play 3.0]<br/>REST and GraphQL, authentication, Swagger UI,<br/>outbox poller that sends emails<br/>Contexts: identity, catalog, shopping,<br/>ordering, notifications"]
+        db[("<b>Database</b><br/>[Container: MySQL 8.4]<br/>Tables of every context (name prefixes),<br/>event outbox, email deliveries")]
+    end
+
+    stripe["<b>Stripe</b><br/>[External System]<br/>Card payments and<br/>payment result webhooks"]
+    email["<b>Email service</b><br/>[External System]<br/>SMTP server<br/>(Mailpit in development)"]
+
+    client -->|"Uses<br/>HTTPS: REST, GraphQL"| api
+    manager -->|"Uses<br/>HTTPS: REST, GraphQL"| api
+    api -->|"Reads and writes<br/>JDBC"| db
+    api <-->|"Creates payment intents (HTTPS)<br/>Receives payment events (HTTPS webhook)"| stripe
+    api -->|"Sends notifications<br/>SMTP"| email
+
+    classDef person fill:#08427b,stroke:#052e56,color:#ffffff
+    classDef container fill:#438dd5,stroke:#2e6295,color:#ffffff
+    classDef external fill:#999999,stroke:#6b6b6b,color:#ffffff
+    class client,manager person
+    class api,db container
+    class stripe,email external
+    style system fill:#ffffff,stroke:#444444,stroke-dasharray: 5 5

@@ -31,7 +31,7 @@ These decisions are summarized in ADR 0001 and will get their own record.
 | Level | Diagram |
 | --- | --- |
 | 1. System context | [c4/c4-level1-context.md](c4/c4-level1-context.md) |
-| 2. Containers | Planned |
+| 2. Containers | [c4/c4-level2-containers.md](c4/c4-level2-containers.md) |
 
 ## Conventions
 
