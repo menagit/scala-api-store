@@ -1,0 +1,12 @@
+.git
+.idea
+.bsp
+.claude
+.env
+.env.*
+**/target
+project/project
+logs
+demo
+docs
+test
