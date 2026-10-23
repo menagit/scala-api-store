@@ -3,6 +3,7 @@ import {firstValue } from "@/lib/firstValue";
 import type { ApiError,ProductPage } from "@/lib/types";
 import CategoryFilter from "@/components/CategoryFilter";
 import SortSelector from "@/components/SortSelector";
+import Pagination from "@/components/Pagination";
 
 const apiParams = ["page", "size", "sort", "order", "categoryId"];
 
@@ -59,6 +60,7 @@ export default async function Home({searchParams}: {
                     />
                 ))}
             </div>
+            <Pagination current={current} page={page.page} totalPages={page.totalPages} />
         </main>
     );
 }
