@@ -28,5 +28,7 @@ trait ProductRepository {
 
   def updateStatus(id: Long, status: ProductStatus, now: Instant, conn: Connection): Either[AppError, Unit]
 
+  def update(product: Product, conn: Connection): Either[AppError, Unit]
+
   def markDeleted(id: Long, now: Instant, conn: Connection): Either[AppError, Unit]
 }

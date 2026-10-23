@@ -426,6 +426,73 @@ GET   /products                     com.mendev.apistore.catalog.infrastructure.w
 GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.web.ProductController.detail(id: Long)
 
 ###
+#  summary: Update a product (manager only)
+#  description: Partial update. A field that is not sent stays as it is; a field sent as null is a 400. An empty body changes nothing. status cannot be changed here (use the GraphQL enableProduct and disableProduct). A price or discount change is recorded in the price history.
+#  tags:
+#  - Products
+#  security:
+#  - bearerAuth: []
+#  requestBody:
+#    required: true
+#    content:
+#      application/json:
+#        schema:
+#          type: object
+#          properties:
+#            name:
+#              type: string
+#              description: 1 to 200 characters
+#            description:
+#              type: string
+#              description: At most 2000 characters, may be empty
+#            categoryId:
+#              type: integer
+#              format: int64
+#              description: An existing category id
+#            price:
+#              type: number
+#              description: Above 0, at most 2 decimals
+#            discountPercent:
+#              type: number
+#              description: 0 to 99.99
+#            stock:
+#              type: integer
+#              description: 0 or more
+#  responses:
+#    200:
+#      description: The product after the update
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ManagerProduct'
+#    400:
+#      description: Validation error (all field errors are returned together)
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    401:
+#      description: Missing or invalid token
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    403:
+#      description: Not a manager
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    404:
+#      description: Product not found
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+###
+PATCH /products/:id                 com.mendev.apistore.catalog.infrastructure.web.ProductController.update(id: Long)
+
+###
 #  summary: List categories (public)
 #  description: All categories, ordered by name. No paging.
 #  tags:

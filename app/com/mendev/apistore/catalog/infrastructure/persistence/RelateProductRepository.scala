@@ -109,6 +109,21 @@ class RelateProductRepository extends ProductRepository {
     }
   }
 
+  override def update(product: Product, conn: Connection): Either[AppError, Unit] = {
+    val updated = sql"""
+      UPDATE catalog_product
+      SET name = ${product.name}, description = ${product.description}, category_id = ${product.categoryId},
+          price = ${product.price.value}, discount_percent = ${product.discount.percent},
+          stock = ${product.stock.value}, updated_at = ${product.updatedAt}
+      WHERE id = ${product.id}
+    """.executeUpdate()(conn)
+
+    updated match {
+      case 0 => throw new IllegalStateException(s"Product ${product.id} not found for update")
+      case _ => Right(())
+    }
+  }
+
   override def markDeleted(id: Long, now: Instant, conn: Connection): Either[AppError, Unit] = {
     val updated = sql"""
       UPDATE catalog_product
