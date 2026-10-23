@@ -49,6 +49,24 @@ object ProductJson {
       "totalPages" -> page.totalPages
     )
 
+  def toManagerJson(item: ProductListItem): JsObject = {
+    val p = item.product
+    toPublicJson(item) ++ Json.obj(
+      "status"    -> statusToText(p.status),
+      "createdAt" -> p.createdAt,
+      "updatedAt" -> p.updatedAt
+    ) ++ p.deletedAt.fold(Json.obj())(d => Json.obj("deletedAt" -> d))
+  }
+
+  def managerPageToJson(page: ProductPage): JsObject =
+    Json.obj(
+      "items"      -> page.items.map(toManagerJson),
+      "page"       -> page.page,
+      "size"       -> page.size,
+      "totalItems" -> page.totalItems,
+      "totalPages" -> page.totalPages
+    )
+
   private def statusToText(status: ProductStatus): String = status match {
     case Active   => "ACTIVE"
     case Disabled => "DISABLED"

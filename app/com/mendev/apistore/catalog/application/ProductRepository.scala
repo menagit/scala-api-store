@@ -19,9 +19,16 @@ trait ProductRepository {
 
   def countVisible(categoryId: Option[Long], conn: Connection): Either[AppError, Long]
 
+  // No status condition; deleted rows only when filter.includeDeleted.
+  def findManagerPage(filter: ManagerProductFilter, sort: ProductSort, order: SortOrder, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Product]]
+
+  def countManager(filter: ManagerProductFilter, conn: Connection): Either[AppError, Long]
+
   def lockById(id: Long, conn: Connection): Either[AppError, Option[Product]]
 
   def updateStatus(id: Long, status: ProductStatus, now: Instant, conn: Connection): Either[AppError, Unit]
+
+  def update(product: Product, conn: Connection): Either[AppError, Unit]
 
   def markDeleted(id: Long, now: Instant, conn: Connection): Either[AppError, Unit]
 }

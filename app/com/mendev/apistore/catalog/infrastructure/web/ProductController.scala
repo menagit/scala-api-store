@@ -1,6 +1,6 @@
 package com.mendev.apistore.catalog.infrastructure.web
 
-import com.mendev.apistore.catalog.application.{CreateProductCommand, CreateProductUseCase, GetProductQuery, GetProductUseCase, ListProductsQuery, ListProductsUseCase}
+import com.mendev.apistore.catalog.application.{CreateProductCommand, CreateProductUseCase, GetProductQuery, GetProductUseCase, ListProductsQuery, ListProductsUseCase, UpdateProductUseCase}
 import com.mendev.apistore.shared.actions.{AuthenticatedAction, RoleAction}
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import com.mendev.apistore.shared.security.Manager
@@ -14,6 +14,7 @@ class ProductController(
   createProductUseCase: CreateProductUseCase,
   listProductsUseCase: ListProductsUseCase,
   getProductUseCase: GetProductUseCase,
+  updateProductUseCase: UpdateProductUseCase,
   authenticated: AuthenticatedAction,
   roleAction: RoleAction
 )(implicit ec: ExecutionContext)
@@ -46,6 +47,17 @@ class ProductController(
     getProductUseCase.execute(GetProductQuery(id)).map {
       case Right(item) => Ok(ProductJson.detailToJson(item))
       case Left(error) => ErrorResponse.result(error)
+    }
+  }
+
+  def update(id: Long): Action[String] = (authenticated andThen roleAction(Manager)).async(parse.tolerantText) { request =>
+    UpdateProductRequest.read(request.body) match {
+      case Left(error) => Future.successful(ErrorResponse.result(error))
+      case Right(command) =>
+        updateProductUseCase.execute(request.actor, id, command).map {
+          case Right(item) => Ok(ProductJson.toManagerJson(item))
+          case Left(error) => ErrorResponse.result(error)
+        }
     }
   }
 
