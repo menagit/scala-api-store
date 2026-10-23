@@ -2,6 +2,7 @@ import ProductCard from "@/components/ProductCard";
 import {firstValue } from "@/lib/firstValue";
 import type { ApiError,ProductPage } from "@/lib/types";
 import CategoryFilter from "@/components/CategoryFilter";
+import SortSelector from "@/components/SortSelector";
 
 const apiParams = ["page", "size", "sort", "order", "categoryId"];
 
@@ -46,6 +47,7 @@ export default async function Home({searchParams}: {
         <main className="p-8">
             <h1 className="text-2xl font-semibold">API Store</h1>
             <CategoryFilter current={current} />
+            <SortSelector current={current} />
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 {page.items.map((product) => (
                     <ProductCard
