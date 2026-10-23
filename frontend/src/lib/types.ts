@@ -22,3 +22,17 @@ export type ProductPage = {
     totalItems: number;
     totalPages: number;
 };
+
+
+export type FieldError = {
+    field: string;
+    message: string;
+};
+
+export type ApiError = {
+    error: {
+        code: string;
+        message: string;
+        details?: FieldError[];
+    };
+};
