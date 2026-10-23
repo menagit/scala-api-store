@@ -141,3 +141,63 @@ components:
           type: integer
         totalPages:
           type: integer
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name: *id001
+    CategoryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    ManagerProduct:
+      type: object
+      description: Manager view of a product, with its category, status and dates
+      properties:
+        id:
+          type: integer
+          format: int64
+        name: *id001
+        description: *id001
+        category:
+          $ref: '#/components/schemas/Category'
+        price:
+          type: number
+        discountPercent:
+          type: number
+        discountedPrice:
+          type: number
+        stock:
+          type: integer
+        inStock:
+          type: boolean
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - DISABLED
+        createdAt: *id001
+        updatedAt: *id001
+        deletedAt:
+          type: string
+          description: Only present when the product is deleted
+    ManagerProductPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManagerProduct'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer

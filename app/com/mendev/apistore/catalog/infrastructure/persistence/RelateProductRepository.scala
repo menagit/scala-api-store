@@ -1,7 +1,7 @@
 package com.mendev.apistore.catalog.infrastructure.persistence
 
 import com.lucidchart.relate.*
-import com.mendev.apistore.catalog.application.{ProductRepository, ProductSort, SortOrder}
+import com.mendev.apistore.catalog.application.{ManagerProductFilter, ProductRepository, ProductSort, SortOrder}
 import com.mendev.apistore.catalog.domain.{NewProduct, Product, ProductStatus}
 import com.mendev.apistore.shared.error.AppError
 
@@ -65,6 +65,26 @@ class RelateProductRepository extends ProductRepository {
     Right(total)
   }
 
+  override def findManagerPage(filter: ManagerProductFilter, sort: ProductSort, order: SortOrder, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Product]] = {
+    val entities = (sql"""
+      SELECT id, name, description, category_id, price, discount_percent, stock, status, deleted_at, created_at, updated_at
+      FROM catalog_product""" + managerWhere(filter) + sql"""
+      ORDER BY """ + orderBy(sort, order).unsafeSql + sql"""
+      LIMIT $limit OFFSET $offset
+    """).asList(ProductEntity.fromRow)(conn)
+
+    Right(entities.map(ProductEntity.toDomain))
+  }
+
+  override def countManager(filter: ManagerProductFilter, conn: Connection): Either[AppError, Long] = {
+    val total = (sql"""
+      SELECT COUNT(*) AS total
+      FROM catalog_product""" + managerWhere(filter)
+    ).asSingle(_.long("total"))(conn)
+
+    Right(total)
+  }
+
   override def lockById(id: Long, conn: Connection): Either[AppError, Option[Product]] = {
     val entity = sql"""
       SELECT id, name, description, category_id, price, discount_percent, stock, status, deleted_at, created_at, updated_at
@@ -117,4 +137,13 @@ class RelateProductRepository extends ProductRepository {
 
   private def categoryFilter(categoryId: Option[Long]): InterpolatedQuery =
     categoryId.fold(sql"")(id => sql" AND category_id = $id")
+
+  private def managerWhere(filter: ManagerProductFilter): InterpolatedQuery =
+    sql" WHERE 1 = 1" + deletedFilter(filter.includeDeleted) + categoryFilter(filter.categoryId) + statusFilter(filter.status)
+
+  private def deletedFilter(includeDeleted: Boolean): InterpolatedQuery =
+    if (includeDeleted) sql"" else sql" AND deleted_at IS NULL"
+
+  private def statusFilter(status: Option[ProductStatus]): InterpolatedQuery =
+    status.fold(sql"")(s => sql" AND status = ${ProductEntity.statusToText(s)}")
 }

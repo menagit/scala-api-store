@@ -426,6 +426,149 @@ GET   /products                     com.mendev.apistore.catalog.infrastructure.w
 GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.web.ProductController.detail(id: Long)
 
 ###
+#  summary: List categories (public)
+#  description: All categories, ordered by name. No paging.
+#  tags:
+#  - Products
+#  responses:
+#    200:
+#      description: The categories
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/CategoryList'
+###
+GET   /categories                   com.mendev.apistore.catalog.infrastructure.web.CategoryController.list
+
+###
+#  summary: List products (manager only)
+#  description: ACTIVE and DISABLED products. Deleted products only with includeDeleted=true. Out-of-range page or size values are corrected. A value that cannot be understood is a 400.
+#  tags:
+#  - Products
+#  security:
+#  - bearerAuth: []
+#  parameters:
+#  - name: page
+#    in: query
+#    description: Starts at 1, default 1
+#    schema:
+#      type: integer
+#  - name: size
+#    in: query
+#    description: Default 20, maximum 100
+#    schema:
+#      type: integer
+#  - name: sort
+#    in: query
+#    description: Default createdAt. price sorts by the discounted price
+#    schema:
+#      type: string
+#      enum:
+#      - price
+#      - name
+#      - createdAt
+#  - name: order
+#    in: query
+#    description: Default desc
+#    schema:
+#      type: string
+#      enum:
+#      - asc
+#      - desc
+#  - name: categoryId
+#    in: query
+#    description: Category id. An unknown id returns an empty page
+#    schema:
+#      type: integer
+#  - name: status
+#    in: query
+#    description: Only products with this status. Default both
+#    schema:
+#      type: string
+#      enum:
+#      - ACTIVE
+#      - DISABLED
+#  - name: includeDeleted
+#    in: query
+#    description: Default false
+#    schema:
+#      type: boolean
+#  responses:
+#    200:
+#      description: A page of products
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ManagerProductPage'
+#    400:
+#      description: A value that cannot be understood (field errors are returned together)
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    401:
+#      description: Missing or invalid token
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    403:
+#      description: Not a manager
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+###
+GET   /manager/products             com.mendev.apistore.catalog.infrastructure.web.ManagerProductController.list
+
+###
+#  summary: Get one product (manager only)
+#  description: Returns ACTIVE and DISABLED products. A deleted product is 404 unless includeDeleted=true.
+#  tags:
+#  - Products
+#  security:
+#  - bearerAuth: []
+#  parameters:
+#  - name: includeDeleted
+#    in: query
+#    description: Default false
+#    schema:
+#      type: boolean
+#  responses:
+#    200:
+#      description: The product
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ManagerProduct'
+#    400:
+#      description: includeDeleted is not true or false
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    401:
+#      description: Missing or invalid token
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    403:
+#      description: Not a manager
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    404:
+#      description: Product not found
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+###
+GET   /manager/products/:id         com.mendev.apistore.catalog.infrastructure.web.ManagerProductController.detail(id: Long)
+
+###
 #  summary: 'GraphQL endpoint: cart, orders and products (15 operations)'
 #  description: |-
 #    All GraphQL operations go through this one URL. Send a JSON body with a query string. Pick an operation from the Examples dropdown.
