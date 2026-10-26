@@ -71,6 +71,26 @@ components:
         expires_in:
           type: integer
           description: Seconds
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        position:
+          type: integer
+          description: Upload order; the lowest is the cover
+        largeUrl:
+          type: string
+        thumbUrl:
+          type: string
+    CoverImage:
+      type: object
+      properties:
+        largeUrl:
+          type: string
+        thumbUrl:
+          type: string
     Product:
       type: object
       description: Manager view of a product
@@ -122,17 +142,33 @@ components:
           type: integer
         inStock:
           type: boolean
-        images:
-          type: array
-          items: *id001
-          description: Only on the detail endpoint, empty for now
+    PublicProductListItem:
+      allOf:
+        - $ref: '#/components/schemas/PublicProduct'
+        - type: object
+          properties:
+            coverImage:
+              nullable: true
+              description: The image with the lowest position; null when the product has no image
+              allOf:
+                - $ref: '#/components/schemas/CoverImage'
+    PublicProductDetail:
+      allOf:
+        - $ref: '#/components/schemas/PublicProduct'
+        - type: object
+          properties:
+            images:
+              type: array
+              description: Ordered by position; empty when the product has no image
+              items:
+                $ref: '#/components/schemas/ProductImage'
     ProductPage:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/PublicProduct'
+            $ref: '#/components/schemas/PublicProductListItem'
         page:
           type: integer
         size:
@@ -186,13 +222,33 @@ components:
         deletedAt:
           type: string
           description: Only present when the product is deleted
+    ManagerProductListItem:
+      allOf:
+        - $ref: '#/components/schemas/ManagerProduct'
+        - type: object
+          properties:
+            coverImage:
+              nullable: true
+              description: The image with the lowest position; null when the product has no image
+              allOf:
+                - $ref: '#/components/schemas/CoverImage'
+    ManagerProductDetail:
+      allOf:
+        - $ref: '#/components/schemas/ManagerProduct'
+        - type: object
+          properties:
+            images:
+              type: array
+              description: Ordered by position; empty when the product has no image
+              items:
+                $ref: '#/components/schemas/ProductImage'
     ManagerProductPage:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/ManagerProduct'
+            $ref: '#/components/schemas/ManagerProductListItem'
         page:
           type: integer
         size:

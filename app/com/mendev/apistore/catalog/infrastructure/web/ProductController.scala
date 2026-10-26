@@ -45,7 +45,7 @@ class ProductController(
 
   def detail(id: Long): Action[AnyContent] = Action.async {
     getProductUseCase.execute(GetProductQuery(id)).map {
-      case Right(item) => Ok(ProductJson.detailToJson(item))
+      case Right(detail) => Ok(ProductJson.detailToJson(detail))
       case Left(error) => ErrorResponse.result(error)
     }
   }

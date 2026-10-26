@@ -32,7 +32,7 @@ class ManagerProductController(
 
   def detail(id: Long): Action[AnyContent] = (authenticated andThen roleAction(Manager)).async { request =>
     getManagerProductUseCase.execute(GetManagerProductQuery(id, request.getQueryString("includeDeleted"))).map {
-      case Right(item) => Ok(ProductJson.toManagerJson(item))
+      case Right(detail) => Ok(ProductJson.managerDetailToJson(detail))
       case Left(error) => ErrorResponse.result(error)
     }
   }
