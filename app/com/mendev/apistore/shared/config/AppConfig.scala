@@ -37,7 +37,8 @@ final case class AppConfig(
                             jwt: JwtConfig,
                             encryption: EncryptionConfig,
                             graphql: GraphQLConfig = GraphQLConfig(),
-                            cors: CorsConfig = CorsConfig()
+                            cors: CorsConfig = CorsConfig(),
+                            images: ImagesConfig = ImagesConfig()
                           )
 
 object AppConfig {

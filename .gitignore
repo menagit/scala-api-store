@@ -18,6 +18,7 @@ tmp/
 .cache-main
 .cache-tests
 test-result/
+/uploads/
 .history/
 *.class
 

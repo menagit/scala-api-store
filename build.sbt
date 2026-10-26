@@ -35,6 +35,7 @@ libraryDependencies ++= Seq(
   "org.sangria-graphql" %% "sangria"                  % "4.2.19",
   "org.sangria-graphql" %% "sangria-play-json-play30" % "2.0.3",
   "org.webjars" % "swagger-ui" % "5.10.3",
+  "net.coobird" % "thumbnailator" % "0.4.21",
   "com.dimafeng" %% "testcontainers-scala-scalatest" % "0.44.1" % Test,
   "com.dimafeng" %% "testcontainers-scala-mysql" % "0.44.1" % Test,
   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test
