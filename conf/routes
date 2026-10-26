@@ -493,6 +493,106 @@ GET   /products/:id                 com.mendev.apistore.catalog.infrastructure.w
 PATCH /products/:id                 com.mendev.apistore.catalog.infrastructure.web.ProductController.update(id: Long)
 
 ###
+#  summary: Upload a product image (manager only)
+#  description: One JPEG or PNG file per request, in the form field file. At most 5 MB and 6000 pixels on each side. Stored as a large copy (within 1200 x 1200) and a thumbnail (within 400 x 400). The new image gets the next position; the lowest position is the cover.
+#  tags:
+#  - Products
+#  security:
+#  - bearerAuth: []
+#  requestBody:
+#    required: true
+#    content:
+#      multipart/form-data:
+#        schema:
+#          type: object
+#          required:
+#          - file
+#          properties:
+#            file:
+#              type: string
+#              format: binary
+#  responses:
+#    201:
+#      description: The stored image
+#      content:
+#        application/json:
+#          schema:
+#            type: object
+#            properties:
+#              id:
+#                type: integer
+#                format: int64
+#              position:
+#                type: integer
+#              largeUrl:
+#                type: string
+#              thumbUrl:
+#                type: string
+#    400:
+#      description: Missing file, not a JPEG or PNG, not a valid image, or over the size or pixel limit (field file)
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    401:
+#      description: Missing or invalid token
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    403:
+#      description: Not a manager
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    404:
+#      description: Product not found
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    409:
+#      description: The product already has the maximum number of images
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+###
+POST  /products/:id/images          com.mendev.apistore.catalog.infrastructure.web.ProductImageController.upload(id: Long)
+
+###
+#  summary: Delete a product image (manager only)
+#  description: Removes the image and both of its files.
+#  tags:
+#  - Products
+#  security:
+#  - bearerAuth: []
+#  responses:
+#    204:
+#      description: Image deleted
+#    401:
+#      description: Missing or invalid token
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    403:
+#      description: Not a manager
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+#    404:
+#      description: Product not found, or image not found for this product
+#      content:
+#        application/json:
+#          schema:
+#            $ref: '#/components/schemas/ErrorResponse'
+###
+DELETE /products/:id/images/:imageId com.mendev.apistore.catalog.infrastructure.web.ProductImageController.delete(id: Long, imageId: Long)
+
+###
 #  summary: List categories (public)
 #  description: All categories, ordered by name. No paging.
 #  tags:

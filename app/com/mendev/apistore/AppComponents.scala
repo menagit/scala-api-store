@@ -50,7 +50,7 @@ class AppComponents(context: Context)
     (publicId, conn) => getUserContactUseCase.executeIn(publicId, conn).map(_.map(c => Recipient(c.email, c.firstName)))
 
   // Arguments follow the order in conf/routes: error handler, then each controller once.
-  lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController, productController, categoryController, managerProductController, graphQLController,assets)
+  lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController, productController, productImageController, categoryController, managerProductController, graphQLController,assets)
 
   override lazy val corsConfig: CORSConfig = CORSConfig(
     allowedOrigins = CORSConfig.Origins.Matching(appConfig.cors.origins.toSet),

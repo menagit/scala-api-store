@@ -1,6 +1,6 @@
 package com.mendev.apistore.catalog.infrastructure.web
 
-import com.mendev.apistore.catalog.application.{ProductListItem, ProductPage}
+import com.mendev.apistore.catalog.application.{ImageView, ProductListItem, ProductPage}
 import com.mendev.apistore.catalog.domain.{Product, ProductStatus}
 import com.mendev.apistore.catalog.domain.ProductStatus.{Active, Disabled}
 import play.api.libs.json.{JsObject, Json}
@@ -19,6 +19,14 @@ object ProductJson {
       "status"          -> statusToText(p.status),
       "createdAt"       -> p.createdAt,
       "updatedAt"       -> p.updatedAt
+    )
+
+  def imageToJson(image: ImageView): JsObject =
+    Json.obj(
+      "id"       -> image.id,
+      "position" -> image.position,
+      "largeUrl" -> image.largeUrl,
+      "thumbUrl" -> image.thumbUrl
     )
 
   // Public reads list only these fields, so a new field on Product never leaks by accident.
