@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { buildHref } from "@/lib/buildHref";
-import { categories } from "@/lib/categories";
+import type { Category } from "@/lib/types";
 
 export default function CategoryFilter({
                                            current,
+                                           categories,
                                        }: {
     current: { [key: string]: string | undefined };
+    categories: Category[];
 }) {
     return (
         <nav className="mt-6 flex flex-wrap gap-2">
