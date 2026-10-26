@@ -1,9 +1,9 @@
 package com.mendev.apistore.catalog.infrastructure.web
 
-import com.mendev.apistore.catalog.application.{ImageView, ProductListItem, ProductPage}
+import com.mendev.apistore.catalog.application.{ImageView, ProductDetail, ProductListItem, ProductPage}
 import com.mendev.apistore.catalog.domain.{Product, ProductStatus}
 import com.mendev.apistore.catalog.domain.ProductStatus.{Active, Disabled}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 
 object ProductJson {
 
@@ -29,6 +29,9 @@ object ProductJson {
       "thumbUrl" -> image.thumbUrl
     )
 
+  def coverToJson(image: ImageView): JsObject =
+    Json.obj("largeUrl" -> image.largeUrl, "thumbUrl" -> image.thumbUrl)
+
   // Public reads list only these fields, so a new field on Product never leaks by accident.
   def toPublicJson(item: ProductListItem): JsObject = {
     val p = item.product
@@ -45,12 +48,12 @@ object ProductJson {
     )
   }
 
-  def detailToJson(item: ProductListItem): JsObject =
-    toPublicJson(item) + ("images" -> Json.arr())
+  def detailToJson(detail: ProductDetail): JsObject =
+    toPublicJson(detail.item) ++ Json.obj("images" -> detail.images.map(imageToJson))
 
   def pageToJson(page: ProductPage): JsObject =
     Json.obj(
-      "items"      -> page.items.map(toPublicJson),
+      "items"      -> page.items.map(pageItem => withCover(toPublicJson(pageItem.item), pageItem.cover)),
       "page"       -> page.page,
       "size"       -> page.size,
       "totalItems" -> page.totalItems,
@@ -66,14 +69,20 @@ object ProductJson {
     ) ++ p.deletedAt.fold(Json.obj())(d => Json.obj("deletedAt" -> d))
   }
 
+  def managerDetailToJson(detail: ProductDetail): JsObject =
+    toManagerJson(detail.item) ++ Json.obj("images" -> detail.images.map(imageToJson))
+
   def managerPageToJson(page: ProductPage): JsObject =
     Json.obj(
-      "items"      -> page.items.map(toManagerJson),
+      "items"      -> page.items.map(pageItem => withCover(toManagerJson(pageItem.item), pageItem.cover)),
       "page"       -> page.page,
       "size"       -> page.size,
       "totalItems" -> page.totalItems,
       "totalPages" -> page.totalPages
     )
+
+  private def withCover(json: JsObject, cover: Option[ImageView]): JsObject =
+    json ++ Json.obj("coverImage" -> cover.fold[JsValue](JsNull)(coverToJson))
 
   private def statusToText(status: ProductStatus): String = status match {
     case Active   => "ACTIVE"

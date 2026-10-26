@@ -3,7 +3,7 @@ package com.mendev.apistore.catalog
 import com.mendev.apistore.catalog.application.{CategoryRepository, ChangeProductStatusUseCase, CreateProductUseCase, DeleteProductImageUseCase, DeleteProductUseCase, GetManagerProductUseCase, GetProductSummariesUseCase, GetProductUseCase, ImageProcessor, ListCategoriesUseCase, ListManagerProductsUseCase, ListProductsUseCase, PendingOrderChecker, ProductImageRepository, ProductPriceHistoryRepository, ProductRepository, ProductStatusHistoryRepository, ReturnStockUseCase, StockRepository, TakeStockUseCase, UpdateProductUseCase, UploadProductImageUseCase}
 import com.mendev.apistore.catalog.infrastructure.image.{LocalImageStorage, ThumbnailatorImageProcessor}
 import com.mendev.apistore.catalog.infrastructure.persistence.{RelateCategoryRepository, RelateProductImageRepository, RelateProductPriceHistoryRepository, RelateProductRepository, RelateProductStatusHistoryRepository, RelateStockRepository}
-import com.mendev.apistore.catalog.infrastructure.web.{CategoryController, ManagerProductController, ProductController, ProductImageController}
+import com.mendev.apistore.catalog.infrastructure.web.{CategoryController, ImageFileController, ManagerProductController, ProductController, ProductImageController}
 import com.mendev.apistore.shared.actions.AuthenticatedAction
 import com.mendev.apistore.shared.SharedComponents
 import play.api.ContextBasedBuiltInComponents
@@ -26,10 +26,10 @@ trait CatalogComponents {
     new CreateProductUseCase(productRepository, categoryRepository, productStatusHistoryRepository, txRunner, clock)
 
   lazy val listProductsUseCase: ListProductsUseCase =
-    new ListProductsUseCase(productRepository, categoryRepository, txRunner)
+    new ListProductsUseCase(productRepository, categoryRepository, productImageRepository, imageStorage, txRunner)
 
   lazy val getProductUseCase: GetProductUseCase =
-    new GetProductUseCase(productRepository, categoryRepository, txRunner)
+    new GetProductUseCase(productRepository, categoryRepository, productImageRepository, imageStorage, txRunner)
 
   lazy val getProductSummariesUseCase: GetProductSummariesUseCase =
     new GetProductSummariesUseCase(productRepository, txRunner)
@@ -56,10 +56,10 @@ trait CatalogComponents {
     new CategoryController(controllerComponents, listCategoriesUseCase)(executionContext)
 
   lazy val listManagerProductsUseCase: ListManagerProductsUseCase =
-    new ListManagerProductsUseCase(productRepository, categoryRepository, txRunner)
+    new ListManagerProductsUseCase(productRepository, categoryRepository, productImageRepository, imageStorage, txRunner)
 
   lazy val getManagerProductUseCase: GetManagerProductUseCase =
-    new GetManagerProductUseCase(productRepository, categoryRepository, txRunner)
+    new GetManagerProductUseCase(productRepository, categoryRepository, productImageRepository, imageStorage, txRunner)
 
   lazy val managerProductController: ManagerProductController =
     new ManagerProductController(controllerComponents, listManagerProductsUseCase, getManagerProductUseCase, authenticatedAction, roleAction)(executionContext)
@@ -82,4 +82,7 @@ trait CatalogComponents {
       controllerComponents, uploadProductImageUseCase, deleteProductImageUseCase, authenticatedAction, roleAction,
       appConfig.images.maxFileBytes
     )(executionContext, materializer)
+
+  lazy val imageFileController: ImageFileController =
+    new ImageFileController(controllerComponents, imageStorage)(executionContext)
 }

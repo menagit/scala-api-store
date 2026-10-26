@@ -1,12 +1,12 @@
 package com.mendev.apistore.catalog.application
 
-import com.mendev.apistore.catalog.domain.{Category, Product}
+import com.mendev.apistore.catalog.domain.{Category, Product, ProductImage}
 import com.mendev.apistore.shared.db.TxRunner
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 
 import scala.concurrent.Future
 
-class ListProductsUseCase(productRepo: ProductRepository, categoryRepo: CategoryRepository, runner: TxRunner) {
+class ListProductsUseCase(productRepo: ProductRepository, categoryRepo: CategoryRepository, imageRepo: ProductImageRepository, storage: ImageStorage, runner: TxRunner) {
 
   def execute(query: ListProductsQuery): Future[Either[AppError, ProductPage]] = {
     //Just making sure page,size are ints and always show products to the client
@@ -34,15 +34,18 @@ class ListProductsUseCase(productRepo: ProductRepository, categoryRepo: Category
           productRepo.findVisiblePage(categoryId, sort, order, size, (page - 1).toLong * size, conn) match {
             case Left(e) => Left(e)
             case Right(products) =>
-              categoryRepo.findAll(conn).map(categories => toPage(products, categories, page, size, total))
+              categoryRepo.findAll(conn).flatMap { categories =>
+                imageRepo.findCovers(products.map(_.id), conn).map(covers => toPage(products, categories, covers, page, size, total))
+              }
           }
       }
     }
 
-  private def toPage(products: List[Product], categories: List[Category], page: Int, size: Int, total: Long): ProductPage = {
+  private def toPage(products: List[Product], categories: List[Category], covers: Map[Long, ProductImage], page: Int, size: Int, total: Long): ProductPage = {
     val byId = categories.map(c => c.id -> c).toMap
     val items = products.map { p =>
-      ProductListItem(p, byId.getOrElse(p.categoryId, throw new IllegalStateException(s"Missing category ${p.categoryId} for product ${p.id}")))
+      val item = ProductListItem(p, byId.getOrElse(p.categoryId, throw new IllegalStateException(s"Missing category ${p.categoryId} for product ${p.id}")))
+      ProductPageItem(item, covers.get(p.id).map(ImageView.from(_, storage)))
     }
     ProductPage(items, page, size, total, (total + size - 1) / size)
   }

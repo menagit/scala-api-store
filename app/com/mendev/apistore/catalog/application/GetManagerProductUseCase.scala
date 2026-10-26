@@ -5,15 +5,15 @@ import com.mendev.apistore.shared.error.{AppError, FieldError}
 
 import scala.concurrent.Future
 
-class GetManagerProductUseCase(productRepo: ProductRepository, categoryRepo: CategoryRepository, runner: TxRunner) {
+class GetManagerProductUseCase(productRepo: ProductRepository, categoryRepo: CategoryRepository, imageRepo: ProductImageRepository, storage: ImageStorage, runner: TxRunner) {
 
-  def execute(query: GetManagerProductQuery): Future[Either[AppError, ProductListItem]] =
+  def execute(query: GetManagerProductQuery): Future[Either[AppError, ProductDetail]] =
     parseIncludeDeleted(query.includeDeleted) match {
       case Left(error)           => Future.successful(Left(AppError.Validation("Invalid request", List(error))))
       case Right(includeDeleted) => load(query.id, includeDeleted)
     }
 
-  private def load(id: Long, includeDeleted: Boolean): Future[Either[AppError, ProductListItem]] =
+  private def load(id: Long, includeDeleted: Boolean): Future[Either[AppError, ProductDetail]] =
     runner.run { conn =>
       productRepo.findById(id, conn) match {
         case Left(e) => Left(e)
@@ -21,6 +21,8 @@ class GetManagerProductUseCase(productRepo: ProductRepository, categoryRepo: Cat
           categoryRepo.findById(p.categoryId, conn).map {
             case Some(category) => ProductListItem(p, category)
             case None           => throw new IllegalStateException(s"Missing category ${p.categoryId} for product ${p.id}")
+          }.flatMap { item =>
+            imageRepo.findByProduct(p.id, conn).map(images => ProductDetail(item, images.map(ImageView.from(_, storage))))
           }
         case Right(_) => Left(AppError.NotFound("Product not found"))
       }
