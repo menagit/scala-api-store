@@ -584,7 +584,7 @@ DELETE /products/:id/images/:imageId com.mendev.apistore.catalog.infrastructure.
 
 ###
 #  summary: List categories (public)
-#  description: All categories, ordered by name. No paging.
+#  description: All categories, ordered by name, each with productCount (its ACTIVE and not deleted products). No paging.
 #  tags:
 #  - Products
 #  responses:
