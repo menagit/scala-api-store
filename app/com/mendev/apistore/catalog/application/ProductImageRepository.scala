@@ -15,7 +15,7 @@ trait ProductImageRepository {
 
   def findByProduct(productId: Long, conn: Connection): Either[AppError, List[ProductImage]]
 
-  def findCovers(productIds: List[Long], conn: Connection): Either[AppError, Map[Long, ProductImage]]
+  def findByProducts(productIds: List[Long], conn: Connection): Either[AppError, Map[Long, List[ProductImage]]]
 
   def findById(imageId: Long, productId: Long, conn: Connection): Either[AppError, Option[ProductImage]]
 

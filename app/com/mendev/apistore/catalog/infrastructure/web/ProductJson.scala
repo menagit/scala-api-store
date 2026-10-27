@@ -53,7 +53,7 @@ object ProductJson {
 
   def pageToJson(page: ProductPage): JsObject =
     Json.obj(
-      "items"      -> page.items.map(pageItem => withCover(toPublicJson(pageItem.item), pageItem.cover)),
+      "items"      -> page.items.map(pageItem => withImages(withCover(toPublicJson(pageItem.item), pageItem.cover), pageItem.images)),
       "page"       -> page.page,
       "size"       -> page.size,
       "totalItems" -> page.totalItems,
@@ -74,7 +74,7 @@ object ProductJson {
 
   def managerPageToJson(page: ProductPage): JsObject =
     Json.obj(
-      "items"      -> page.items.map(pageItem => withCover(toManagerJson(pageItem.item), pageItem.cover)),
+      "items"      -> page.items.map(pageItem => withImages(withCover(toManagerJson(pageItem.item), pageItem.cover), pageItem.images)),
       "page"       -> page.page,
       "size"       -> page.size,
       "totalItems" -> page.totalItems,
@@ -83,6 +83,9 @@ object ProductJson {
 
   private def withCover(json: JsObject, cover: Option[ImageView]): JsObject =
     json ++ Json.obj("coverImage" -> cover.fold[JsValue](JsNull)(coverToJson))
+
+  private def withImages(json: JsObject, images: List[ImageView]): JsObject =
+    json ++ Json.obj("images" -> images.map(coverToJson))
 
   private def statusToText(status: ProductStatus): String = status match {
     case Active   => "ACTIVE"
