@@ -9,21 +9,28 @@ const options = [
     { label: "Name: Z to A", sort: "name", order: "desc" },
 ];
 
+const link = "rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+
 export default function SortSelector({ current }: { current: Record<string, string | undefined> }) {
     const sort = current.sort ?? "createdAt";
     const order = current.order ?? "desc";
 
     return (
-        <div className="flex gap-4 py-2">
-            {options.map((option) => (
-                <Link
-                    key={option.label}
-                    href={buildHref(current, { sort: option.sort, order: option.order, page: undefined })}
-                    className={sort === option.sort && order === option.order ? "font-bold underline" : ""}
-                >
-                    {option.label}
-                </Link>
-            ))}
-        </div>
+        <nav aria-label="Sort" className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            <span className="text-muted">Sort by</span>
+            {options.map((option) => {
+                const selected = sort === option.sort && order === option.order;
+                return (
+                    <Link
+                        key={option.label}
+                        href={buildHref(current, { sort: option.sort, order: option.order, page: undefined })}
+                        className={selected ? `${link} font-semibold text-brand` : `${link} text-muted hover:text-ink`}
+                        aria-current={selected ? "true" : undefined}
+                    >
+                        {option.label}
+                    </Link>
+                );
+            })}
+        </nav>
     );
 }

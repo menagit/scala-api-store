@@ -2,6 +2,14 @@ import Link from "next/link";
 import { buildHref } from "@/lib/buildHref";
 import type { Category } from "@/lib/types";
 
+const pill = "rounded-full px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+
+function pillProps(selected: boolean) {
+    return selected
+        ? { className: `${pill} bg-brand text-white`, "aria-current": "true" as const }
+        : { className: `${pill} bg-surface text-ink-soft hover:bg-line` };
+}
+
 export default function CategoryFilter({
                                            current,
                                            categories,
@@ -13,7 +21,7 @@ export default function CategoryFilter({
         <nav className="mt-6 flex flex-wrap gap-2">
             <Link
                 href={buildHref(current, { categoryId: undefined, page: undefined })}
-                className={current.categoryId ? "rounded border px-3 py-1" : "rounded border px-3 py-1 font-bold underline"}
+                {...pillProps(!current.categoryId)}
             >
                 All
             </Link>
@@ -21,11 +29,7 @@ export default function CategoryFilter({
                 <Link
                     key={category.id}
                     href={buildHref(current, { categoryId: String(category.id), page: undefined })}
-                    className={
-                        current.categoryId === String(category.id)
-                            ? "rounded border px-3 py-1 font-bold underline"
-                            : "rounded border px-3 py-1"
-                    }
+                    {...pillProps(current.categoryId === String(category.id))}
                 >
                     {category.name}
                 </Link>

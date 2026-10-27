@@ -48,17 +48,21 @@ export default async function Home({searchParams}: {
 
     return (
         <main>
-            <h1 className="text-2xl font-semibold text-ink">Products</h1>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                <h1 className="text-2xl font-semibold text-ink">Products</h1>
+                <SortSelector current={current} />
+            </div>
             <CategoryFilter current={current} categories={categories} />
-            <SortSelector current={current} />
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {page.items.map((product) => (
                     <ProductCard
                         key={product.id}
                         name={product.name}
+                        categoryName={product.category.name}
                         price={product.price}
                         discountPercent={product.discountPercent}
                         discountedPrice={product.discountedPrice}
+                        thumbUrl={product.coverImage?.thumbUrl ?? null}
                     />
                 ))}
             </div>

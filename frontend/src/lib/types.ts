@@ -3,6 +3,11 @@ export type Category = {
     name: string;
 };
 
+export type CoverImage = {
+    largeUrl: string;
+    thumbUrl: string;
+};
+
 export type Product = {
     id: number;
     name: string;
@@ -13,6 +18,7 @@ export type Product = {
     discountedPrice: number;
     stock: number;
     inStock: boolean;
+    coverImage: CoverImage | null;
 };
 
 export type ProductPage = {
