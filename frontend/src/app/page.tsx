@@ -30,8 +30,8 @@ export default async function Home({searchParams}: {
     if (!response.ok) {
         const body: ApiError = await response.json();
         return (
-            <main className="p-8">
-                <h1 className="text-2xl font-semibold">API Store</h1>
+            <main>
+                <h1 className="text-2xl font-semibold text-ink">Products</h1>
                 <p className="mt-6 font-medium">{body.error.message}</p>
                 <ul className="mt-2 list-disc pl-5">
                     {body.error.details?.map((detail) => (
@@ -47,8 +47,8 @@ export default async function Home({searchParams}: {
     const categories = await getCategories();
 
     return (
-        <main className="p-8">
-            <h1 className="text-2xl font-semibold">API Store</h1>
+        <main>
+            <h1 className="text-2xl font-semibold text-ink">Products</h1>
             <CategoryFilter current={current} categories={categories} />
             <SortSelector current={current} />
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
