@@ -35,17 +35,17 @@ class ListProductsUseCase(productRepo: ProductRepository, categoryRepo: Category
             case Left(e) => Left(e)
             case Right(products) =>
               categoryRepo.findAll(conn).flatMap { categories =>
-                imageRepo.findCovers(products.map(_.id), conn).map(covers => toPage(products, categories, covers, page, size, total))
+                imageRepo.findByProducts(products.map(_.id), conn).map(images => toPage(products, categories, images, page, size, total))
               }
           }
       }
     }
 
-  private def toPage(products: List[Product], categories: List[Category], covers: Map[Long, ProductImage], page: Int, size: Int, total: Long): ProductPage = {
+  private def toPage(products: List[Product], categories: List[Category], images: Map[Long, List[ProductImage]], page: Int, size: Int, total: Long): ProductPage = {
     val byId = categories.map(c => c.id -> c).toMap
     val items = products.map { p =>
       val item = ProductListItem(p, byId.getOrElse(p.categoryId, throw new IllegalStateException(s"Missing category ${p.categoryId} for product ${p.id}")))
-      ProductPageItem(item, covers.get(p.id).map(ImageView.from(_, storage)))
+      ProductPageItem(item, images.getOrElse(p.id, Nil).map(ImageView.from(_, storage)))
     }
     ProductPage(items, page, size, total, (total + size - 1) / size)
   }

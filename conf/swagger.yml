@@ -152,6 +152,11 @@ components:
               description: The image with the lowest position; null when the product has no image
               allOf:
                 - $ref: '#/components/schemas/CoverImage'
+            images:
+              type: array
+              description: Ordered by position; the first one equals coverImage; empty when the product has no image
+              items:
+                $ref: '#/components/schemas/CoverImage'
     PublicProductDetail:
       allOf:
         - $ref: '#/components/schemas/PublicProduct'
@@ -241,6 +246,11 @@ components:
               description: The image with the lowest position; null when the product has no image
               allOf:
                 - $ref: '#/components/schemas/CoverImage'
+            images:
+              type: array
+              description: Ordered by position; the first one equals coverImage; empty when the product has no image
+              items:
+                $ref: '#/components/schemas/CoverImage'
     ManagerProductDetail:
       allOf:
         - $ref: '#/components/schemas/ManagerProduct'

@@ -46,20 +46,16 @@ class RelateProductImageRepository extends ProductImageRepository {
     Right(images)
   }
 
-  override def findCovers(productIds: List[Long], conn: Connection): Either[AppError, Map[Long, ProductImage]] = productIds match {
+  override def findByProducts(productIds: List[Long], conn: Connection): Either[AppError, Map[Long, List[ProductImage]]] = productIds match {
     case Nil => Right(Map.empty)
     case _ =>
-      val covers = sql"""
-        SELECT i.id, i.product_id, i.position, i.large_key, i.thumb_key, i.created_at
-        FROM catalog_product_image i
-        JOIN (
-          SELECT product_id, MIN(position) AS position
-          FROM catalog_product_image
-          WHERE product_id IN ($productIds)
-          GROUP BY product_id
-        ) c ON c.product_id = i.product_id AND c.position = i.position
+      val images = sql"""
+        SELECT id, product_id, position, large_key, thumb_key, created_at
+        FROM catalog_product_image
+        WHERE product_id IN ($productIds)
+        ORDER BY product_id, position
       """.asList(fromRow)(conn)
-      Right(covers.map(image => image.productId -> image).toMap)
+      Right(images.groupBy(_.productId))
   }
 
   override def findById(imageId: Long, productId: Long, conn: Connection): Either[AppError, Option[ProductImage]] = {
