@@ -1,7 +1,7 @@
 package com.mendev.apistore.catalog.infrastructure.persistence
 
 import com.lucidchart.relate.*
-import com.mendev.apistore.catalog.application.CategoryRepository
+import com.mendev.apistore.catalog.application.{CategoryListItem, CategoryRepository}
 import com.mendev.apistore.catalog.domain.Category
 import com.mendev.apistore.shared.error.AppError
 
@@ -18,6 +18,18 @@ class RelateCategoryRepository extends CategoryRepository {
     """.asList(row => Category(row.long("id"), row.string("name")))(conn)
 
     Right(categories)
+  }
+
+  override def findAllWithProductCount(conn: Connection): Either[AppError, List[CategoryListItem]] = {
+    val items = sql"""
+      SELECT c.id, c.name,
+             (SELECT COUNT(*) FROM catalog_product p
+               WHERE p.category_id = c.id AND p.status = 'ACTIVE' AND p.deleted_at IS NULL) AS product_count
+      FROM catalog_category c
+      ORDER BY c.name
+    """.asList(row => CategoryListItem(Category(row.long("id"), row.string("name")), row.long("product_count")))(conn)
+
+    Right(items)
   }
 
   override def findById(id: Long, conn: Connection): Either[AppError, Option[Category]] = {

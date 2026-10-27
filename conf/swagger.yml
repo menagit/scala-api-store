@@ -184,13 +184,22 @@ components:
           type: integer
           format: int64
         name: *id001
+    CategoryListItem:
+      allOf:
+        - $ref: '#/components/schemas/Category'
+        - type: object
+          properties:
+            productCount:
+              type: integer
+              format: int64
+              description: "Products a client can see in this category: ACTIVE and not deleted"
     CategoryList:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/Category'
+            $ref: '#/components/schemas/CategoryListItem'
     ManagerProduct:
       type: object
       description: Manager view of a product, with its category, status and dates
