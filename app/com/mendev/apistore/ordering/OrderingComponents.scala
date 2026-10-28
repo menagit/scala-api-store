@@ -1,7 +1,7 @@
 package com.mendev.apistore.ordering
 
 import com.mendev.apistore.catalog.application.{GetProductSummariesUseCase, PendingOrderChecker, ReturnStockUseCase, TakeStockUseCase}
-import com.mendev.apistore.ordering.application.{CartSource, ClientIdLookup,ChangeOrderStatusUseCase, CheckoutUseCase, GetMyOrderUseCase, ListMyOrdersUseCase, ListOrdersUseCase, OrderIdGenerator, OrderRepository, OrderStatusHistoryRepository, StockReservation}
+import com.mendev.apistore.ordering.application.{CartSource, ChangeOrderStatusUseCase, CheckoutUseCase, ClientDirectory, ClientIdLookup, GetMyOrderUseCase, GetOrderClientsUseCase, ListMyOrdersUseCase, ListOrdersUseCase, OrderIdGenerator, OrderRepository, OrderStatusHistoryRepository, StockReservation}
 import com.mendev.apistore.ordering.infrastructure.cart.InProcessCartSource
 import com.mendev.apistore.ordering.infrastructure.catalog.{InProcessStockReservation, OrderingPendingOrderChecker}
 import com.mendev.apistore.ordering.infrastructure.persistence.{RelateOrderRepository, RelateOrderStatusHistoryRepository}
@@ -19,6 +19,7 @@ trait OrderingComponents {
   def clearCartUseCase: ClearCartUseCase
   def orderIdGenerator: OrderIdGenerator
   def clientIdLookup: ClientIdLookup
+  def clientDirectory: ClientDirectory
 
   lazy val orderRepository: OrderRepository = new RelateOrderRepository
   lazy val orderStatusHistoryRepository: OrderStatusHistoryRepository = new RelateOrderStatusHistoryRepository
@@ -34,6 +35,7 @@ trait OrderingComponents {
   lazy val listMyOrdersUseCase: ListMyOrdersUseCase = new ListMyOrdersUseCase(orderRepository, txRunner)
   lazy val getMyOrderUseCase: GetMyOrderUseCase     = new GetMyOrderUseCase(orderRepository, txRunner)
   lazy val listOrdersUseCase: ListOrdersUseCase     = new ListOrdersUseCase(orderRepository, clientIdLookup, txRunner)
+  lazy val getOrderClientsUseCase: GetOrderClientsUseCase = new GetOrderClientsUseCase(clientDirectory, txRunner)
 
   lazy val changeOrderStatusUseCase: ChangeOrderStatusUseCase =
     new ChangeOrderStatusUseCase(orderRepository, orderStatusHistoryRepository, stockReservation, eventPublisher, txRunner, clock)

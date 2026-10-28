@@ -223,6 +223,26 @@ class OrderingSchemaSpec extends PlaySpec with AppComponentsSuite with BeforeAnd
       (bad \ "errors" \ 0 \ "extensions" \ "details").as[List[JsValue]].map(d => (d \ "field").as[String]) mustBe List("status", "createdFrom", "clientEmail")
       (range \ "errors" \ 0 \ "extensions" \ "details").as[List[JsValue]].map(d => (d \ "field").as[String]) mustBe List("createdTo")
     }
+
+    "show each order's own client to a manager and answer FORBIDDEN on client to a client" in {
+      insertProduct(1)
+      val mine   = placeOrder(clientToken, 1)
+      val others = placeOrder(otherClientToken, 1)
+      val myId   = (graphql(clientToken, "query { me { publicId } }") \ "data" \ "me" \ "publicId").as[String]
+
+      val page    = graphql(managerToken, "query { orders { items { id client { id email firstName lastName } } } }") \ "data" \ "orders" \ "items"
+      val orders  = graphql(clientToken, "query { orders { totalItems } }")
+      val myOrder = graphql(clientToken, "query { myOrders { items { id client { email } } } }")
+
+      val clients = page.as[List[JsValue]].map(o => (o \ "id").as[String] -> (o \ "client" \ "email").as[String]).toMap
+      clients mustBe Map(mine -> "checkout-client@apistore.com", others -> "orders-other-client@apistore.com")
+      (page \ 1 \ "client" \ "id").as[String] mustBe myId
+      (page \ 1 \ "client" \ "firstName").as[String] mustBe "Ana"
+      (page \ 1 \ "client" \ "lastName").as[String] mustBe "Ruiz"
+      (orders \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "FORBIDDEN"
+      (myOrder \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "FORBIDDEN"
+      (myOrder \ "data" \ "myOrders" \ "items" \ 0 \ "client").toOption mustBe Some(JsNull)
+    }
   }
 
   "Order status changes in GraphQL" must {

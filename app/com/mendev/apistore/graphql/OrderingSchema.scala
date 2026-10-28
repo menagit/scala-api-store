@@ -1,11 +1,13 @@
 package com.mendev.apistore.graphql
 
-import com.mendev.apistore.ordering.application.{ChangeOrderStatusUseCase, CheckoutUseCase, GetMyOrderUseCase, ListMyOrdersQuery, ListMyOrdersUseCase, ListOrdersQuery, ListOrdersUseCase, OrderPage}
+import com.mendev.apistore.ordering.application.{ChangeOrderStatusUseCase, CheckoutUseCase, ClientInfo, GetMyOrderUseCase, GetOrderClientsUseCase, ListMyOrdersQuery, ListMyOrdersUseCase, ListOrdersQuery, ListOrdersUseCase, OrderPage}
 import com.mendev.apistore.ordering.domain.OrderStatus.{Cancelled, Delivered, Shipped}
 import com.mendev.apistore.ordering.domain.{Order, OrderItem, OrderStatus}
 import com.mendev.apistore.shared.security.{Actor, Client, Manager}
+import sangria.execution.deferred.{Fetcher, HasId}
 import sangria.schema.{Argument, BigDecimalType, Field, IntType, ListType, LongType, ObjectType, OptionInputType, OptionType, StringType, fields}
 
+import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 class OrderingSchema(
@@ -13,8 +15,22 @@ class OrderingSchema(
   listMyOrders: ListMyOrdersUseCase,
   getMyOrder: GetMyOrderUseCase,
   listOrders: ListOrdersUseCase,
+  getOrderClients: GetOrderClientsUseCase,
   changeOrderStatus: ChangeOrderStatusUseCase
 )(implicit ec: ExecutionContext) {
+
+  val clientFetcher: Fetcher[GraphQLContext, ClientInfo, ClientInfo, UUID] =
+    Fetcher((_: GraphQLContext, ids: Seq[UUID]) => AppErrorException.orFail(getOrderClients.execute(ids.toList)))(HasId(_.id))
+
+  private val ClientType: ObjectType[GraphQLContext, ClientInfo] = ObjectType(
+    "Client",
+    fields[GraphQLContext, ClientInfo](
+      Field("id", StringType, resolve = _.value.id.toString),
+      Field("email", StringType, resolve = _.value.email),
+      Field("firstName", StringType, resolve = _.value.firstName),
+      Field("lastName", StringType, resolve = _.value.lastName)
+    )
+  )
 
   private val OrderItemType: ObjectType[GraphQLContext, OrderItem] = ObjectType(
     "OrderItem",
@@ -39,7 +55,12 @@ class OrderingSchema(
       Field("estimatedDelivery", OptionType(StringType), resolve = _.value.estimatedDelivery.map(_.toString)),
       Field("createdAt", StringType, resolve = _.value.createdAt.toString),
       Field("updatedAt", StringType, resolve = _.value.updatedAt.toString),
-      Field("items", ListType(OrderItemType), resolve = _.value.items)
+      Field("items", ListType(OrderItemType), resolve = _.value.items),
+      Field(
+        "client",
+        OptionType(ClientType),
+        resolve = c => RoleGuard.require(c.ctx.actor, Manager)(Future.successful(clientFetcher.deferOpt(c.value.userPublicId)))
+      )
     )
   )
 
