@@ -754,7 +754,7 @@ GET   /images/*key                  com.mendev.apistore.catalog.infrastructure.w
 #    - myCart: client. The cart with its lines and total. Unavailable products stay in the list with available false and are left out of the total.
 #    - myOrders(page = 1, size = 20): client. My orders, newest first. size above 100 is reduced to 100.
 #    - order(id): client. One of my orders. A missing id, an invalid id and another client's order all return NOT_FOUND.
-#    - orders(page = 1, size = 20): manager. All orders, newest first.
+#    - orders(page = 1, size = 20, status, createdFrom, createdTo, clientEmail): manager. All orders, newest first. Optional filters, combined: status (PENDING, CONFIRMED, SHIPPED, DELIVERED or CANCELLED), createdFrom and createdTo (YYYY-MM-DD, both days included, UTC) and clientEmail (exact, case ignored; an unknown email gives an empty page). Bad values give VALIDATION_ERROR with every wrong field. Each order has a client field (id, email, firstName, lastName), manager only: a client who asks for it on myOrders, order or checkout gets FORBIDDEN on that field.
 #
 #    **Mutations (10)**
 #    - addToCart(productId, quantity): client. Quantity must be above 0. The cart total for a product cannot exceed its stock.
@@ -827,7 +827,7 @@ GET   /images/*key                  com.mendev.apistore.catalog.infrastructure.w
 #          orders:
 #            summary: 'orders: all orders, newest first (manager)'
 #            value:
-#              query: 'query { orders(page: 1, size: 20) { totalItems totalPages items { id status total createdAt } } }'
+#              query: 'query { orders(page: 1, size: 20, status: "CONFIRMED", createdFrom: "2026-10-01", createdTo: "2026-10-31", clientEmail: "ana@x.com") { totalItems totalPages items { id status total createdAt client { id email firstName lastName } } } }'
 #          shipOrder:
 #            summary: 'shipOrder: mark an order shipped (manager)'
 #            value:

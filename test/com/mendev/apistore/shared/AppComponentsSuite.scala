@@ -15,7 +15,7 @@ trait AppComponentsSuite extends OneAppPerSuiteWithComponents { this: TestSuite 
 
   override def components: BuiltInComponents = {
     val db  = TestDatabase.config
-    val url = s"jdbc:mysql://${db.host}:${db.port}/${db.name}"
+    val url = s"jdbc:mysql://${db.host}:${db.port}/${db.name}?connectionTimeZone=UTC"
 
     val context = ApplicationLoader.Context.create(
       Environment.simple(),

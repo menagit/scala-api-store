@@ -46,6 +46,7 @@ class SignUpUseCaseSpec extends AnyWordSpec with Matchers {
     }
     def findByEmail(email: String, conn: Connection): Either[AppError, Option[User]]                          = ???
     def findByPublicId(publicId: String, conn: Connection): Either[AppError, Option[User]]                    = ???
+    def findByPublicIds(publicIds: List[String], conn: Connection): Either[AppError, List[User]]              = ???
     def incrementTokenVersion(publicId: String, now: Instant, conn: Connection): Either[AppError, Unit]       = ???
     def updatePasswordHash(publicId: String, newHash: String, now: Instant, conn: Connection): Either[AppError, Unit] = ???
   }

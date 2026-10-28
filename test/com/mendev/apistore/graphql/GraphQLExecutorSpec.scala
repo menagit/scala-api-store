@@ -6,6 +6,7 @@ import com.mendev.apistore.shared.security.{Actor, Client}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{JsNull, JsValue}
+import sangria.execution.deferred.DeferredResolver
 import sangria.introspection.introspectionQueryString
 import sangria.schema.{Field, ObjectType, OptionType, Schema, StringType, fields}
 
@@ -27,7 +28,7 @@ class GraphQLExecutorSpec extends AnyWordSpec with Matchers {
     )
   )
 
-  private val executor = new GraphQLExecutor(Schema(queryType), GraphQLConfig())
+  private val executor = new GraphQLExecutor(Schema(queryType), DeferredResolver.empty, GraphQLConfig())
   private val context  = GraphQLContext(Actor("0192f5a0-0000-7000-8000-000000000001", Client))
 
   private def run(query: String): JsValue =

@@ -51,6 +51,19 @@ class RelateUserRepository extends  UserRepository{
     Right(entity.map(UserEntity.toDomain))
   }
 
+  override def findByPublicIds(publicIds: List[String], conn: Connection): Either[AppError, List[User]] = publicIds match {
+    case Nil => Right(Nil)
+    case _ =>
+      val ids = publicIds.map(id => sql"${UserEntity.uuidToBytes(UUID.fromString(id))}").reduce((a, b) => a + sql", " + b)
+      val entities = (sql"""
+        SELECT public_id, email, password_hash, first_name, last_name, role, token_version, created_at, updated_at
+        FROM identity_user
+        WHERE public_id IN (""" + ids + sql")"
+      ).asList(UserEntity.fromRow)(conn)
+
+      Right(entities.map(UserEntity.toDomain))
+  }
+
   override def incrementTokenVersion(publicId: String, now: Instant, conn: Connection): Either[AppError, Unit] = {
     sql"""
       UPDATE identity_user

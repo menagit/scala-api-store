@@ -1,7 +1,7 @@
 package com.mendev.apistore.ordering.infrastructure.persistence
 
 import com.lucidchart.relate.*
-import com.mendev.apistore.ordering.application.{NewOrder, OrderRepository}
+import com.mendev.apistore.ordering.application.{NewOrder, OrderFilter, OrderRepository}
 import com.mendev.apistore.ordering.domain.{Order, OrderItem, OrderStatus}
 import com.mendev.apistore.shared.db.UuidBytes
 import com.mendev.apistore.shared.error.AppError
@@ -76,22 +76,22 @@ class RelateOrderRepository extends OrderRepository {
     Right(total)
   }
 
-  override def findPage(limit: Int, offset: Long, conn: Connection): Either[AppError, List[Order]] = {
-    val entities = sql"""
+  override def findPage(filter: OrderFilter, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Order]] = {
+    val entities = (sql"""
       SELECT id, public_id, user_public_id, status, total, tracking_number, estimated_delivery, created_at, updated_at
-      FROM ordering_order
+      FROM ordering_order""" + where(filter) + sql"""
       ORDER BY created_at DESC, id DESC
       LIMIT $limit OFFSET $offset
-    """.asList(OrderEntity.fromRow)(conn)
+    """).asList(OrderEntity.fromRow)(conn)
 
     Right(withItems(entities, conn))
   }
 
-  override def countAll(conn: Connection): Either[AppError, Long] = {
-    val total = sql"""
+  override def count(filter: OrderFilter, conn: Connection): Either[AppError, Long] = {
+    val total = (sql"""
       SELECT COUNT(*) AS total
-      FROM ordering_order
-    """.asSingle(_.long("total"))(conn)
+      FROM ordering_order""" + where(filter)
+    ).asSingle(_.long("total"))(conn)
 
     Right(total)
   }
@@ -125,6 +125,13 @@ class RelateOrderRepository extends OrderRepository {
 
     Right(found)
   }
+
+  private def where(filter: OrderFilter): InterpolatedQuery =
+    sql" WHERE 1 = 1" +
+      filter.status.fold(sql"")(s => sql" AND status = ${OrderEntity.statusToText(s)}") +
+      filter.from.fold(sql"")(f => sql" AND created_at >= $f") +
+      filter.toExclusive.fold(sql"")(t => sql" AND created_at < $t") +
+      filter.userPublicId.fold(sql"")(u => sql" AND user_public_id = ${UuidBytes.toBytes(u)}")
 
   private def withItems(entities: List[OrderEntity], conn: Connection): List[Order] = entities match {
     case Nil => Nil

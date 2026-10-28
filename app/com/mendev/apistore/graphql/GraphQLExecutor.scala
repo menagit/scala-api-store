@@ -4,6 +4,7 @@ import com.mendev.apistore.shared.config.GraphQLConfig
 import com.mendev.apistore.shared.error.{AppError, FieldError}
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
+import sangria.execution.deferred.DeferredResolver
 import sangria.execution.{ExceptionHandler, Executor, HandledException, MaxQueryDepthReachedError, QueryAnalysisError, QueryReducer, QueryReducingError}
 import sangria.marshalling.ResultMarshaller
 import sangria.marshalling.playJson.*
@@ -13,7 +14,7 @@ import sangria.schema.Schema
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class GraphQLExecutor(schema: Schema[GraphQLContext, Unit], config: GraphQLConfig)(implicit ec: ExecutionContext) {
+class GraphQLExecutor(schema: Schema[GraphQLContext, Unit], deferredResolver: DeferredResolver[GraphQLContext], config: GraphQLConfig)(implicit ec: ExecutionContext) {
 
   private val logger = Logger(getClass)
 
@@ -29,6 +30,7 @@ class GraphQLExecutor(schema: Schema[GraphQLContext, Unit], config: GraphQLConfi
             operationName = request.operationName,
             variables = request.variables.getOrElse(Json.obj()),
             exceptionHandler = exceptionHandler,
+            deferredResolver = deferredResolver,
             queryReducers = List(
               QueryReducer.rejectMaxDepth[GraphQLContext](config.maxDepth),
               QueryReducer.rejectComplexQueries[GraphQLContext](config.maxComplexity, (_, _) => new QueryTooComplexException)
