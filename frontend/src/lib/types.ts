@@ -3,7 +3,7 @@ export type Category = {
     name: string;
 };
 
-export type CoverImage = {
+export type ImageUrls = {
     largeUrl: string;
     thumbUrl: string;
 };
@@ -18,7 +18,8 @@ export type Product = {
     discountedPrice: number;
     stock: number;
     inStock: boolean;
-    coverImage: CoverImage | null;
+    coverImage: ImageUrls | null;
+    images: ImageUrls[];
 };
 
 export type ProductPage = {

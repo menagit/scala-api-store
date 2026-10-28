@@ -62,7 +62,7 @@ export default async function Home({searchParams}: {
                         price={product.price}
                         discountPercent={product.discountPercent}
                         discountedPrice={product.discountedPrice}
-                        thumbUrl={product.coverImage?.thumbUrl ?? null}
+                        images={product.images}
                     />
                 ))}
             </div>

@@ -1,10 +1,13 @@
+import ImageCarousel from "@/components/ImageCarousel";
+import type { ImageUrls } from "@/lib/types";
+
 type ProductCardProps = {
     name: string;
     categoryName: string;
     price: number;
     discountPercent: number;
     discountedPrice: number;
-    thumbUrl: string | null;
+    images: ImageUrls[];
 };
 
 export default function ProductCard({
@@ -13,21 +16,12 @@ export default function ProductCard({
                                         price,
                                         discountPercent,
                                         discountedPrice,
-                                        thumbUrl,
+                                        images,
                                     }: ProductCardProps) {
     return (
         <div className="flex flex-col overflow-hidden rounded-2xl border border-line bg-white">
             <div className="aspect-square bg-surface">
-                {thumbUrl ? (
-                    <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={thumbUrl} alt={name} loading="lazy" className="h-full w-full object-contain p-4" />
-                    </>
-                ) : (
-                    <div aria-hidden="true" className="flex h-full items-center justify-center text-sm text-muted">
-                        No image
-                    </div>
-                )}
+                <ImageCarousel name={name} images={images} />
             </div>
             <div className="flex flex-1 flex-col gap-1 p-4">
                 <p className="text-sm text-muted">{categoryName}</p>
