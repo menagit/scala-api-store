@@ -1,6 +1,6 @@
 package com.mendev.apistore.identity
 
-import com.mendev.apistore.identity.application.{ChangePasswordUseCase, ForgotPasswordUseCase,ResetPasswordUseCase,CheckTokenVersionUseCase, CleanupExpiredTokensUseCase, GetUserContactUseCase, IdGenerator, PasswordHasher, RefreshAccessTokenUseCase, RefreshTokenGenerator, SignInUseCase, SignOutUseCase, SignUpUseCase, TokenIssuer, TokenRepository, UserRepository}
+import com.mendev.apistore.identity.application.{ChangePasswordUseCase, ForgotPasswordUseCase,ResetPasswordUseCase,CheckTokenVersionUseCase, CleanupExpiredTokensUseCase, FindUserIdByEmailUseCase, GetUserContactUseCase, IdGenerator, PasswordHasher, RefreshAccessTokenUseCase, RefreshTokenGenerator, SignInUseCase, SignOutUseCase, SignUpUseCase, TokenIssuer, TokenRepository, UserRepository}
 import com.mendev.apistore.identity.infrastructure.id.UuidV7Generator
 import com.mendev.apistore.identity.infrastructure.persistence.RelateUserRepository
 import com.mendev.apistore.identity.infrastructure.security.{Argon2PasswordHasher, JwtTokenService}
@@ -51,6 +51,7 @@ trait IdentityComponents {
     new CleanupExpiredTokensUseCase(tokenRepository, txRunner, clock)
 
   lazy val getUserContactUseCase: GetUserContactUseCase = new GetUserContactUseCase(userRepository)
+  lazy val findUserIdByEmailUseCase: FindUserIdByEmailUseCase = new FindUserIdByEmailUseCase(userRepository)
 
   lazy val tokenCleanupJob: TokenCleanupJob =
     new TokenCleanupJob(cleanupExpiredTokensUseCase, actorSystem, applicationLifecycle)(executionContext)

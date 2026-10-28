@@ -17,9 +17,9 @@ trait OrderRepository {
 
   def countByUser(userPublicId: UUID, conn: Connection): Either[AppError, Long]
 
-  def findPage(limit: Int, offset: Long, conn: Connection): Either[AppError, List[Order]]
+  def findPage(filter: OrderFilter, limit: Int, offset: Long, conn: Connection): Either[AppError, List[Order]]
 
-  def countAll(conn: Connection): Either[AppError, Long]
+  def count(filter: OrderFilter, conn: Connection): Either[AppError, Long]
 
   def updateStatus(order: Order, conn: Connection): Either[AppError, Unit]
 

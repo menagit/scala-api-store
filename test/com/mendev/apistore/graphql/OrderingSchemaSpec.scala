@@ -67,6 +67,9 @@ class OrderingSchemaSpec extends PlaySpec with AppComponentsSuite with BeforeAnd
   private def stock(productId: Long): Int =
     TestDatabase.query(s"SELECT stock FROM catalog_product WHERE id = $productId")(_.getInt(1)).head
 
+  private def setCreatedAt(orderId: String, at: String): Unit =
+    TestDatabase.update(s"UPDATE ordering_order SET created_at = '$at' WHERE public_id = UNHEX(REPLACE('$orderId', '-', ''))")
+
   private def lastOrderEvent: JsValue =
     Json.parse(
       TestDatabase.query("SELECT payload FROM shared_event WHERE event_type = 'OrderStatusChanged' ORDER BY id DESC LIMIT 1")(_.getString(1)).head
@@ -165,6 +168,60 @@ class OrderingSchemaSpec extends PlaySpec with AppComponentsSuite with BeforeAnd
       (page \ "totalItems").as[Long] mustBe 2L
       (page \ "totalPages").as[Long] mustBe 1L
       (client \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "FORBIDDEN"
+    }
+
+    "filter by status" in {
+      insertProduct(1)
+      placeOrder(clientToken, 1)
+      val shipped = placeOrder(clientToken, 1)
+      graphql(managerToken, s"""mutation { shipOrder(id: "$shipped", trackingNumber: "TRK-1", estimatedDelivery: "2026-10-25") { status } }""")
+
+      val page = graphql(managerToken, """query { orders(status: "SHIPPED") { totalItems items { id status } } }""") \ "data" \ "orders"
+
+      (page \ "items").as[List[JsValue]].map(o => (o \ "id").as[String]) mustBe List(shipped)
+      (page \ "items" \ 0 \ "status").as[String] mustBe "SHIPPED"
+      (page \ "totalItems").as[Long] mustBe 1L
+    }
+
+    "filter by creation date with both end days included" in {
+      insertProduct(1)
+      val before = placeOrder(clientToken, 1)
+      val first  = placeOrder(clientToken, 1)
+      val last   = placeOrder(clientToken, 1)
+      val after  = placeOrder(clientToken, 1)
+      setCreatedAt(before, "2026-09-30 23:59:59.999999")
+      setCreatedAt(first, "2026-10-01 00:00:00")
+      setCreatedAt(last, "2026-10-02 23:59:59.999999")
+      setCreatedAt(after, "2026-10-03 00:00:00")
+
+      val page = graphql(managerToken, """query { orders(createdFrom: "2026-10-01", createdTo: "2026-10-02") { totalItems items { id } } }""") \ "data" \ "orders"
+
+      (page \ "items").as[List[JsValue]].map(o => (o \ "id").as[String]) mustBe List(last, first)
+      (page \ "totalItems").as[Long] mustBe 2L
+    }
+
+    "filter by client email ignoring case and give an empty page for an unknown email" in {
+      insertProduct(1)
+      val mine = placeOrder(clientToken, 1)
+      placeOrder(otherClientToken, 1)
+
+      val page    = graphql(managerToken, """query { orders(clientEmail: " CHECKOUT-CLIENT@APISTORE.COM ") { totalItems items { id } } }""") \ "data" \ "orders"
+      val unknown = graphql(managerToken, """query { orders(clientEmail: "nobody@x.com") { totalItems totalPages items { id } } }""") \ "data" \ "orders"
+
+      (page \ "items").as[List[JsValue]].map(o => (o \ "id").as[String]) mustBe List(mine)
+      (page \ "totalItems").as[Long] mustBe 1L
+      (unknown \ "items").as[List[JsValue]] mustBe Nil
+      (unknown \ "totalItems").as[Long] mustBe 0L
+      (unknown \ "totalPages").as[Long] mustBe 0L
+    }
+
+    "answer VALIDATION_ERROR naming every bad filter together" in {
+      val bad   = graphql(managerToken, """query { orders(status: "SENT", createdFrom: "2026-13-40", clientEmail: "  ") { totalItems } }""")
+      val range = graphql(managerToken, """query { orders(createdFrom: "2026-10-05", createdTo: "2026-10-01") { totalItems } }""")
+
+      (bad \ "errors" \ 0 \ "extensions" \ "code").as[String] mustBe "VALIDATION_ERROR"
+      (bad \ "errors" \ 0 \ "extensions" \ "details").as[List[JsValue]].map(d => (d \ "field").as[String]) mustBe List("status", "createdFrom", "clientEmail")
+      (range \ "errors" \ 0 \ "extensions" \ "details").as[List[JsValue]].map(d => (d \ "field").as[String]) mustBe List("createdTo")
     }
   }
 

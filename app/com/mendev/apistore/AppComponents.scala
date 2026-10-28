@@ -17,7 +17,7 @@ import com.mendev.apistore.notifications.NotificationsComponents
 import play.api.mvc.EssentialFilter
 import com.mendev.apistore.notifications.application.{Recipient, RecipientDirectory}
 import com.mendev.apistore.ordering.OrderingComponents
-import com.mendev.apistore.ordering.application.OrderIdGenerator
+import com.mendev.apistore.ordering.application.{ClientIdLookup, OrderIdGenerator}
 import java.util.UUID
 import controllers.AssetsComponents
 
@@ -48,6 +48,9 @@ class AppComponents(context: Context)
 
   lazy val recipientDirectory: RecipientDirectory =
     (publicId, conn) => getUserContactUseCase.executeIn(publicId, conn).map(_.map(c => Recipient(c.email, c.firstName)))
+
+  lazy val clientIdLookup: ClientIdLookup =
+    (email, conn) => findUserIdByEmailUseCase.executeIn(email, conn).map(_.map(UUID.fromString))
 
   // Arguments follow the order in conf/routes: error handler, then each controller once.
   lazy val router: Router = new Routes(httpErrorHandler, healthController, authController, meController, productController, productImageController, categoryController, managerProductController, imageFileController, graphQLController,assets)

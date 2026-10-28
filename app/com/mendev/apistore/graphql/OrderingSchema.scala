@@ -58,6 +58,11 @@ class OrderingSchema(
   private val SizeArg = Argument("size", OptionInputType(IntType), defaultValue = 20)
   private val IdArg   = Argument("id", StringType)
 
+  private val StatusArg      = Argument("status", OptionInputType(StringType))
+  private val CreatedFromArg = Argument("createdFrom", OptionInputType(StringType))
+  private val CreatedToArg   = Argument("createdTo", OptionInputType(StringType))
+  private val ClientEmailArg = Argument("clientEmail", OptionInputType(StringType))
+
   private val TrackingNumberArg    = Argument("trackingNumber", StringType)
   private val EstimatedDeliveryArg = Argument("estimatedDelivery", StringType)
 
@@ -80,10 +85,11 @@ class OrderingSchema(
     Field(
       "orders",
       OrderPageType,
-      arguments = List(PageArg, SizeArg),
+      arguments = List(PageArg, SizeArg, StatusArg, CreatedFromArg, CreatedToArg, ClientEmailArg),
       resolve = c =>
         RoleGuard.require(c.ctx.actor, Manager) {
-          AppErrorException.orFail(listOrders.execute(ListOrdersQuery(c.arg(PageArg), c.arg(SizeArg))))
+          val query = ListOrdersQuery(c.arg(PageArg), c.arg(SizeArg), c.arg(StatusArg), c.arg(CreatedFromArg), c.arg(CreatedToArg), c.arg(ClientEmailArg))
+          AppErrorException.orFail(listOrders.execute(query))
         }
     )
   )
