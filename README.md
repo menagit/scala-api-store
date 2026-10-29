@@ -83,6 +83,40 @@ Emails sent by the app appear in Mailpit at http://localhost:8025.
 | `ENCRYPTION_KEY` | yes | AES-256 key, 32 random bytes in Base64, that encrypts secrets stored in the database. |
 | `GRAPHQL_MAX_DEPTH`, `GRAPHQL_MAX_COMPLEXITY` | no | GraphQL query limits (defaults: 15 and 300). |
 | `CORS_ALLOWED_ORIGINS` | no | Comma-separated browser origins allowed to call the API. Empty means none. |
+| `PLAY_HTTP_SECRET_KEY` | in production | Play's application secret. Not needed with `./dev.sh run`; required when the packaged app runs (for example in Docker). |
+| `IMAGES_STORAGE_DIR` | no | Folder for uploaded product images (default `uploads`). |
+| `IMAGES_BASE_URL` | no | Address the image URLs start with (default `http://localhost:9000/images`). |
+
+## Run with Docker
+
+The `Dockerfile` builds the packaged app in two stages (sbt, then a Java 17 runtime) and runs it as a non-root user. MySQL and Mailpit still come from `docker compose up -d`.
+
+1. Build the image:
+
+   ```bash
+   docker build -t apistore .
+   ```
+
+2. Run it with your `.env`, pointing the database and mail hosts at your machine:
+
+   ```bash
+   docker run --rm -p 9000:9000 --env-file .env \
+     -e MYSQL_HOST=host.docker.internal \
+     -e MAIL_HOST=host.docker.internal \
+     -e PLAY_HTTP_SECRET_KEY="$(openssl rand -base64 48)" \
+     -e IMAGES_STORAGE_DIR=/tmp/uploads \
+     -e JAVA_OPTS="-Dplay.filters.hosts.allowed.0=. -Dlogger.resource=logback-container.xml -Dlogback.configurationFile=logback-container.xml" \
+     apistore
+   ```
+
+3. Check it: `curl http://localhost:9000/health` returns `{"status":"UP","database":"UP"}`.
+
+What the extra settings do:
+
+- `PLAY_HTTP_SECRET_KEY`: the packaged app does not start without it. A new random value at each start only signs Play's own cookies; it does not affect the API's tokens.
+- `IMAGES_STORAGE_DIR`: the app folder in the image is not writable by the app user, so uploads go to `/tmp/uploads`. They are lost when the container stops.
+- `-Dplay.filters.hosts.allowed.0=.`: allows any `Host` header. Fine on your machine; a real deployment lists its own domain instead.
+- The two logging flags send logs to the console instead of files.
 
 ## API documentation
 
