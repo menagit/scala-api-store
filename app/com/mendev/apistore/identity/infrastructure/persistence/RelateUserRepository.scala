@@ -82,4 +82,12 @@ class RelateUserRepository extends  UserRepository{
       .executeUpdate()(conn)
     Right(())
   }
+
+  override def updateLastName(publicId: String, lastName: String, conn: Connection, now: Instant): Either[AppError, Unit] = {
+    sql"""UPDATE identity_user SET last_name = $lastName ,
+          updated_at = $now WHERE
+          public_id = ${UserEntity.uuidToBytes(UUID.fromString(publicId))}"""
+      .executeUpdate()(conn)
+    Right(())
+  }
 }

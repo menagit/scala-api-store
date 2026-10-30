@@ -17,4 +17,6 @@ trait UserRepository {
 
   //Update hash when changing pwd
   def updatePasswordHash(publicId: String, newHash: String, now: Instant, conn: Connection): Either[AppError, Unit]
+
+  def updateLastName(publicId: String, lastName: String, conn: Connection, now: Instant): Either[AppError, Unit]
 }
