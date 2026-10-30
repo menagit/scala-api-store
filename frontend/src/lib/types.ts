@@ -43,3 +43,5 @@ export type ApiError = {
         details?: FieldError[];
     };
 };
+
+export type Role = "CLIENT" | "MANAGER";
