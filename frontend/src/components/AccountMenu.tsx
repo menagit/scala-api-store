@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import SignInDrawer from "@/components/SignInDrawer";
+import { useSignInDrawer } from "@/components/SignInDrawerProvider";
 import type { Role } from "@/lib/types";
 
 export default function AccountMenu({ role }: { role: Role | null }) {
@@ -10,6 +10,8 @@ export default function AccountMenu({ role }: { role: Role | null }) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const [open, setOpen] = useState(false);
+    const { openSignIn } = useSignInDrawer();
+    const roleLabel = role === "MANAGER" ? "Manager" : "Client";
 
     const close = useCallback(() => {
         setOpen(false);
@@ -44,18 +46,19 @@ export default function AccountMenu({ role }: { role: Role | null }) {
                 ref={buttonRef}
                 type="button"
                 aria-label="Account"
-                aria-expanded={open}
-                onClick={() => setOpen((value) => !value)}
-                className={`flex rounded p-1 hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${role ? "text-brand" : "text-muted"}`}
+                aria-expanded={role ? open : undefined}
+                onClick={(event) => (role ? setOpen((value) => !value) : openSignIn(event.currentTarget))}
+                className={`flex items-center gap-1 rounded p-1 hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${role ? "text-brand" : "text-muted"}`}
             >
                 <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <circle cx="12" cy="8" r="4" />
                     <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
                 </svg>
+                {role && <span className="hidden text-sm sm:inline">{roleLabel}</span>}
             </button>
             {role && open && (
                 <div className="absolute right-0 mt-2 w-48 rounded border border-line bg-white p-3 shadow-lg">
-                    <p className="text-sm text-muted">Signed in as {role === "MANAGER" ? "Manager" : "Client"}</p>
+                    <p className="text-sm text-muted">Signed in as {roleLabel}</p>
                     <button
                         type="button"
                         onClick={signOut}
@@ -65,7 +68,6 @@ export default function AccountMenu({ role }: { role: Role | null }) {
                     </button>
                 </div>
             )}
-            {!role && <SignInDrawer open={open} onClose={close} />}
         </div>
     );
 }

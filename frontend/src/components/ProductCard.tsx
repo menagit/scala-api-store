@@ -1,22 +1,29 @@
+import AddToCartButton from "@/components/AddToCartButton";
 import ImageCarousel from "@/components/ImageCarousel";
-import type { ImageUrls } from "@/lib/types";
+import type { ImageUrls, Role } from "@/lib/types";
 
 type ProductCardProps = {
+    id: number;
     name: string;
     categoryName: string;
     price: number;
     discountPercent: number;
     discountedPrice: number;
     images: ImageUrls[];
+    inStock: boolean;
+    role: Role | null;
 };
 
 export default function ProductCard({
+                                        id,
                                         name,
                                         categoryName,
                                         price,
                                         discountPercent,
                                         discountedPrice,
                                         images,
+                                        inStock,
+                                        role,
                                     }: ProductCardProps) {
     return (
         <div className="flex flex-col overflow-hidden rounded-2xl border border-line bg-white">
@@ -37,6 +44,7 @@ export default function ProductCard({
                 ) : (
                     <span className="font-semibold text-brand">${price.toFixed(2)}</span>
                 )}
+                <AddToCartButton productId={id} inStock={inStock} role={role} />
             </div>
         </div>
     );

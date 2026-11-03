@@ -1,7 +1,8 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import type { Role } from "@/lib/types";
 
-export async function getSession(): Promise<{ role: Role } | null> {
+export const getSession = cache(async (): Promise<{ role: Role } | null> => {
     const accessToken = (await cookies()).get("access_token")?.value;
     if (!accessToken) return null;
 
@@ -16,4 +17,4 @@ export async function getSession(): Promise<{ role: Role } | null> {
     } catch {
         return null;
     }
-}
+});
