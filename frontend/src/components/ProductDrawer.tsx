@@ -9,11 +9,12 @@ import type { Category, ManagerProductDetail } from "@/lib/types";
 
 export default function ProductDrawer({ open, productId, categories, onClose }: {
     open: boolean;
-    productId: number;
+    productId: number | null;
     categories: Category[];
     onClose: () => void;
 }) {
     const dialogRef = useRef<HTMLDialogElement>(null);
+    const [currentId, setCurrentId] = useState(productId);
     const [product, setProduct] = useState<ManagerProductDetail | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -32,11 +33,12 @@ export default function ProductDrawer({ open, productId, categories, onClose }: 
     }, [open]);
 
     useEffect(() => {
-        fetch(`/api/manager/products/${productId}`).then(async (response) => {
+        if (currentId === null) return;
+        fetch(`/api/manager/products/${currentId}`).then(async (response) => {
             if (response.ok) setProduct(await response.json());
             else setError((await readError(response)).message);
         });
-    }, [productId]);
+    }, [currentId]);
 
     const close = () => dialogRef.current?.close();
 
@@ -52,7 +54,9 @@ export default function ProductDrawer({ open, productId, categories, onClose }: 
         >
             <div className="flex h-full flex-col overflow-y-auto p-6">
                 <div className="flex items-center justify-between">
-                    <h2 id="product-drawer-title" className="text-xl font-semibold text-ink">Edit product</h2>
+                    <h2 id="product-drawer-title" className="text-xl font-semibold text-ink">
+                        {currentId === null ? "New product" : "Edit product"}
+                    </h2>
                     <button
                         type="button"
                         onClick={close}
@@ -66,7 +70,8 @@ export default function ProductDrawer({ open, productId, categories, onClose }: 
                 </div>
 
                 {error && <p role="alert" className="mt-6 text-sm font-medium text-danger">{error}</p>}
-                {!product && !error && <p className="mt-6 text-muted">Loading...</p>}
+                {currentId !== null && !product && !error && <p className="mt-6 text-muted">Loading...</p>}
+                {currentId === null && <ProductForm product={null} categories={categories} onCreated={setCurrentId} />}
                 {product && (
                     <>
                         <div className="mt-4 flex items-start justify-between gap-3">
@@ -77,7 +82,7 @@ export default function ProductDrawer({ open, productId, categories, onClose }: 
                                 onChange={(status) => setProduct({ ...product, status })}
                             />
                         </div>
-                        <ProductForm product={product} categories={categories} />
+                        <ProductForm product={product} categories={categories} onCreated={setCurrentId} />
                     </>
                 )}
             </div>

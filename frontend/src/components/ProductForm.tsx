@@ -9,6 +9,8 @@ const fields = ["name", "description", "categoryId", "price", "discountPercent",
 
 type Values = Record<(typeof fields)[number], string>;
 
+const empty: Values = { name: "", description: "", categoryId: "", price: "", discountPercent: "", stock: "" };
+
 const inputClass = "mt-1 w-full rounded border bg-white px-3 py-2 text-ink focus-visible:outline-2 focus-visible:outline-brand";
 const labelClass = "block text-sm font-medium text-ink";
 
@@ -29,10 +31,14 @@ function toJson(key: keyof Values, value: string) {
     return key === "price" || key === "discountPercent" ? value : Number(value);
 }
 
-export default function ProductForm({ product, categories }: { product: ManagerProductDetail; categories: Category[] }) {
+export default function ProductForm({ product, categories, onCreated }: {
+    product: ManagerProductDetail | null;
+    categories: Category[];
+    onCreated: (id: number) => void;
+}) {
     const router = useRouter();
     const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-    const [initial, setInitial] = useState(() => toValues(product));
+    const [initial, setInitial] = useState(() => (product ? toValues(product) : empty));
     const [values, setValues] = useState(initial);
     const [pending, setPending] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -56,14 +62,21 @@ export default function ProductForm({ product, categories }: { product: ManagerP
         setPending(true);
         setSaved(false);
         setError(null);
-        const response = await fetch(`/api/manager/products/${product.id}`, {
-            method: "PATCH",
+        const sent = product ? changed : fields.filter((key) => values[key] !== "");
+        const response = await fetch(product ? `/api/manager/products/${product.id}` : "/api/manager/products", {
+            method: product ? "PATCH" : "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(Object.fromEntries(changed.map((key) => [key, toJson(key, values[key])]))),
+            body: JSON.stringify(Object.fromEntries(sent.map((key) => [key, toJson(key, values[key])]))),
         });
         setPending(false);
         if (!response.ok) {
             setError(await readError(response));
+            return;
+        }
+        if (!product) {
+            const { id }: { id: number } = await response.json();
+            router.refresh();
+            onCreated(id);
             return;
         }
         const next = toValues(await response.json());
@@ -89,6 +102,7 @@ export default function ProductForm({ product, categories }: { product: ManagerP
             <div>
                 <label htmlFor="product-categoryId" className={labelClass}>Category</label>
                 <select {...field("categoryId")}>
+                    {!product && <option value="">Choose a category</option>}
                     {categories.map((category) => (
                         <option key={category.id} value={category.id}>{category.name}</option>
                     ))}
@@ -116,7 +130,7 @@ export default function ProductForm({ product, categories }: { product: ManagerP
             <div className="flex items-center gap-3">
                 <button
                     type="submit"
-                    disabled={pending || changed.length === 0}
+                    disabled={pending || (product !== null && changed.length === 0)}
                     className="rounded bg-brand px-4 py-2 font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
                     {pending ? "Saving..." : "Save"}
