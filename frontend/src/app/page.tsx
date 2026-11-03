@@ -5,6 +5,7 @@ import CategoryFilter from "@/components/CategoryFilter";
 import SortSelector from "@/components/SortSelector";
 import Pagination from "@/components/Pagination";
 import { getCategories } from "@/lib/categories";
+import { getSession } from "@/lib/session";
 
 const apiParams = ["page", "size", "sort", "order", "categoryId"];
 
@@ -45,6 +46,7 @@ export default async function Home({searchParams}: {
     }
     const page: ProductPage = await response.json();
     const categories = await getCategories();
+    const session = await getSession();
 
     return (
         <main>
@@ -57,12 +59,15 @@ export default async function Home({searchParams}: {
                 {page.items.map((product) => (
                     <ProductCard
                         key={product.id}
+                        id={product.id}
                         name={product.name}
                         categoryName={product.category.name}
                         price={product.price}
                         discountPercent={product.discountPercent}
                         discountedPrice={product.discountedPrice}
                         images={product.images}
+                        inStock={product.inStock}
+                        role={session?.role ?? null}
                     />
                 ))}
             </div>
