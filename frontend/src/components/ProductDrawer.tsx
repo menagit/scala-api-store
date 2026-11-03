@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import DeleteProductButton from "@/components/DeleteProductButton";
 import ProductForm from "@/components/ProductForm";
+import ProductImages from "@/components/ProductImages";
 import ProductStatusButton from "@/components/ProductStatusButton";
 import StatusBadge from "@/components/StatusBadge";
 import { readError } from "@/lib/readError";
@@ -83,6 +85,8 @@ export default function ProductDrawer({ open, productId, categories, onClose }: 
                             />
                         </div>
                         <ProductForm product={product} categories={categories} onCreated={setCurrentId} />
+                        <ProductImages productId={product.id} images={product.images} />
+                        <DeleteProductButton productId={product.id} onDeleted={close} />
                     </>
                 )}
             </div>
