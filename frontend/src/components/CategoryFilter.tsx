@@ -4,7 +4,7 @@ import type { Category } from "@/lib/types";
 
 const pill = "rounded-full px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
-function pillProps(selected: boolean) {
+export function pillProps(selected: boolean) {
     return selected
         ? { className: `${pill} bg-brand text-white`, "aria-current": "true" as const }
         : { className: `${pill} bg-surface text-ink-soft hover:bg-line` };
