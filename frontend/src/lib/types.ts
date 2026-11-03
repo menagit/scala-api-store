@@ -30,6 +30,25 @@ export type ProductPage = {
     totalPages: number;
 };
 
+export type ManagerProduct = Product & {
+    status: "ACTIVE" | "DISABLED";
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type ManagerProductPage = Omit<ProductPage, "items"> & {
+    items: ManagerProduct[];
+};
+
+export type ProductImage = ImageUrls & {
+    id: number;
+    position: number;
+};
+
+export type ManagerProductDetail = Omit<ManagerProduct, "coverImage" | "images"> & {
+    images: ProductImage[];
+};
+
 
 export type FieldError = {
     field: string;
