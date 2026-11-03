@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSignInDrawer } from "@/components/SignInDrawerProvider";
 import type { Role } from "@/lib/types";
@@ -59,6 +60,15 @@ export default function AccountMenu({ role }: { role: Role | null }) {
             {role && open && (
                 <div className="absolute right-0 mt-2 w-48 rounded border border-line bg-white p-3 shadow-lg">
                     <p className="text-sm text-muted">Signed in as {roleLabel}</p>
+                    {role === "MANAGER" && (
+                        <Link
+                            href="/manager/products"
+                            onClick={() => setOpen(false)}
+                            className="mt-2 block w-full rounded px-2 py-1 text-left text-ink hover:bg-surface focus-visible:outline-2 focus-visible:outline-brand"
+                        >
+                            Manage products
+                        </Link>
+                    )}
                     <button
                         type="button"
                         onClick={signOut}
