@@ -1,9 +1,13 @@
 import Link from "next/link";
 import AccountMenu from "@/components/AccountMenu";
+import CartButton from "@/components/CartButton";
+import { getCartCount } from "@/lib/cart";
 import { getSession } from "@/lib/session";
 
 export default async function TopBar() {
     const session = await getSession();
+    const isClient = session?.role === "CLIENT";
+    const count = isClient ? await getCartCount() : 0;
     return (
         <header className="sticky top-0 z-10 border-b border-line bg-white">
             <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
@@ -14,6 +18,7 @@ export default async function TopBar() {
                     <Link href="/" className="rounded text-muted hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                         Products
                     </Link>
+                    {isClient && <CartButton count={count} />}
                     <AccountMenu role={session?.role ?? null} />
                 </nav>
             </div>

@@ -34,6 +34,7 @@ export default function AddToCartButton({ productId, inStock, role }: { productI
         if (response.ok) {
             setStatus("added");
             timerRef.current = setTimeout(() => setStatus("idle"), 2000);
+            router.refresh();
             return;
         }
         setStatus("idle");
