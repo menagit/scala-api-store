@@ -1,9 +1,14 @@
+"use client";
+
 import StatusBadge from "@/components/StatusBadge";
 import type { ManagerProduct } from "@/lib/types";
 
 const cell = "py-3 pr-4";
 
-export default function ManagerProductsTable({ products }: { products: ManagerProduct[] }) {
+export default function ManagerProductsTable({ products, onSelect }: {
+    products: ManagerProduct[];
+    onSelect: (id: number, opener: HTMLElement | null) => void;
+}) {
     return (
         <table className="mt-6 hidden w-full text-left text-sm md:table">
             <thead className="border-b border-line text-muted">
@@ -19,7 +24,11 @@ export default function ManagerProductsTable({ products }: { products: ManagerPr
             </thead>
             <tbody>
                 {products.map((product) => (
-                    <tr key={product.id} className="border-b border-line">
+                    <tr
+                        key={product.id}
+                        onClick={(event) => onSelect(product.id, event.currentTarget.querySelector("button"))}
+                        className="cursor-pointer border-b border-line hover:bg-surface"
+                    >
                         <td className={cell}>
                             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded bg-surface">
                                 {product.images.length > 0 ? (
@@ -30,7 +39,14 @@ export default function ManagerProductsTable({ products }: { products: ManagerPr
                                 )}
                             </div>
                         </td>
-                        <td className={`${cell} font-medium text-ink`}>{product.name}</td>
+                        <td className={cell}>
+                            <button
+                                type="button"
+                                className="text-left font-medium text-ink hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                            >
+                                {product.name}
+                            </button>
+                        </td>
                         <td className={cell}>{product.category.name}</td>
                         <td className={cell}>
                             {product.discountPercent > 0 ? (

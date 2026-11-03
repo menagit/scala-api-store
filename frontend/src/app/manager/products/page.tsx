@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import ManagerProductCards from "@/components/ManagerProductCards";
-import ManagerProductsTable from "@/components/ManagerProductsTable";
+import ManagerProductsView from "@/components/ManagerProductsView";
 import Pagination from "@/components/Pagination";
 import StatusFilter from "@/components/StatusFilter";
+import { getCategories } from "@/lib/categories";
 import { firstValue } from "@/lib/firstValue";
 import type { ApiError, ManagerProductPage } from "@/lib/types";
 
@@ -55,6 +55,7 @@ export default async function ManagerProducts({ searchParams }: {
     }
 
     const page: ManagerProductPage = await response.json();
+    const categories = await getCategories();
 
     return (
         <main>
@@ -62,8 +63,7 @@ export default async function ManagerProducts({ searchParams }: {
                 Products <span className="font-normal text-muted">({page.totalItems})</span>
             </h1>
             <StatusFilter current={current} />
-            <ManagerProductsTable products={page.items} />
-            <ManagerProductCards products={page.items} />
+            <ManagerProductsView items={page.items} categories={categories} />
             <Pagination current={current} page={page.page} totalPages={page.totalPages} basePath="/manager/products" />
         </main>
     );
