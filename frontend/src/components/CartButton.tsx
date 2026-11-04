@@ -1,9 +1,11 @@
+import Link from "next/link";
+
 export default function CartButton({ count }: { count: number }) {
     const label = count === 0 ? "Cart" : `Cart, ${count} ${count === 1 ? "item" : "items"}`;
 
     return (
-        <button
-            type="button"
+        <Link
+            href="/cart"
             aria-label={label}
             className="relative flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
@@ -17,6 +19,6 @@ export default function CartButton({ count }: { count: number }) {
                     {count > 99 ? "99+" : count}
                 </span>
             )}
-        </button>
+        </Link>
     );
 }

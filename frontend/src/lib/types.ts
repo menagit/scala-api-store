@@ -49,6 +49,21 @@ export type ManagerProductDetail = Omit<ManagerProduct, "coverImage" | "images">
     images: ProductImage[];
 };
 
+export type CartLine = {
+    productId: number;
+    name: string;
+    quantity: number;
+    price: number;
+    discountPercent: number;
+    discountedPrice: number;
+    lineTotal: number;
+    available: boolean;
+};
+
+export type Cart = {
+    lines: CartLine[];
+    total: number;
+};
 
 export type FieldError = {
     field: string;
