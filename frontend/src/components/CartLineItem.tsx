@@ -1,3 +1,4 @@
+import CartLineControls from "@/components/CartLineControls";
 import type { CartLine } from "@/lib/types";
 
 export default function CartLineItem({ line }: { line: CartLine }) {
@@ -21,7 +22,7 @@ export default function CartLineItem({ line }: { line: CartLine }) {
                 {!line.available && <p className="mt-1 text-sm font-medium text-ink-soft">No longer available</p>}
             </div>
             <div className="flex items-center justify-between gap-6 sm:justify-end">
-                <span className={greyed}>Qty {line.quantity}</span>
+                <CartLineControls productId={line.productId} quantity={line.quantity} available={line.available} />
                 {line.available && <span className="font-semibold text-ink">${line.lineTotal.toFixed(2)}</span>}
             </div>
         </li>
